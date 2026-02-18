@@ -1,9 +1,9 @@
 {
-  "name": "barida-recipe-manager",
+  "name": "barida-recipe-management-system",
   "private": true,
   "version": "1.0.0",
   "description": "Industrial Recipe Management System",
-  "author": "Barida Makina",
+  "author": "Eymen Gözel - Barida Makina",
   "main": "electron.js",
   "scripts": {
     "dev": "vite",
