@@ -27,8 +27,6 @@ export const WorkspaceProvider = ({ children }) => {
       // identity.barida.xyz -> identity verification
       const parts = hostname.split('.');
       
-      console.log('Hostname:', hostname, 'Parts:', parts.length);
-      
       // localhost or IP - treat as main domain for development
       if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
         setIsMainDomain(true);
@@ -54,7 +52,7 @@ export const WorkspaceProvider = ({ children }) => {
           return;
         }
 
-        // Identity subdomain for biometric verification
+        // Identity subdomain for biometric verification - no API call needed
         if (subdomain === 'identity') {
           setIsIdentityDomain(true);
           setLoading(false);
@@ -66,17 +64,22 @@ export const WorkspaceProvider = ({ children }) => {
           const response = await api.get(`/workspaces/subdomain/${subdomain}`);
           setWorkspace(response.data);
           setIsSubdomain(true);
+          setLoading(false);
         } catch (err) {
           // Workspace not found - show 404
           if (err.response?.status === 404) {
             setNotFound(true);
           }
-          console.log('Workspace not found:', subdomain);
+          setLoading(false);
         }
+        return;
       }
+      
+      // Fallback - treat as main domain
+      setIsMainDomain(true);
+      setLoading(false);
     } catch (error) {
       console.error('Error detecting workspace:', error);
-    } finally {
       setLoading(false);
     }
   };
