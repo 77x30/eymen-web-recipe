@@ -1,13 +1,53 @@
 {
-  "name": "eymen-web-recipe-frontend",
+  "name": "barida-recipe-manager",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
+  "description": "Industrial Recipe Management System",
+  "author": "Barida Makina",
+  "main": "electron.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "vercel-build": "vite build"
+    "vercel-build": "vite build",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build:mac": "npm run build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.barida.recipe-manager",
+    "productName": "Barida Recipe Manager",
+    "directories": {
+      "output": "electron-dist"
+    },
+    "files": [
+      "dist/**/*",
+      "electron.js",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "installerHeaderIcon": "public/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/icon.png",
+      "category": "Utility"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/icon.icns"
+    }
   },
   "dependencies": {
     "axios": "^1.6.2",
@@ -21,8 +61,12 @@
     "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "concurrently": "^9.2.1",
+    "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
-    "vite": "^5.0.10"
+    "vite": "^5.0.10",
+    "wait-on": "^9.0.4"
   }
 }

@@ -1,6 +1,6 @@
-# Recipe Management System
+# Barida Recipe Management System
 
-A web-based recipe management system inspired by Siemens WinCC recipe functionality.
+A web-based and desktop recipe management system inspired by Siemens WinCC recipe functionality.
 
 ## Features
 
@@ -8,14 +8,18 @@ A web-based recipe management system inspired by Siemens WinCC recipe functional
 - **Data Records**: Store multiple data record instances for each recipe
 - **User Authentication**: JWT-based authentication with role-based access control
 - **Export/Import**: Export recipes to CSV format
-- **WinCC-Style UI**: Familiar interface for industrial automation users
+- **HMI-Style UI**: Touch-friendly interface for industrial automation users
+- **Virtual Keyboard**: Touch keyboard for HMI panels (integer, float, string modes)
+- **Admin Panel**: User management and system status monitoring
+- **Electron Desktop App**: Run as a native Windows/Linux/Mac application
 
 ## Technology Stack
 
-- **Frontend**: React 18 + Vite + TailwindCSS
+- **Frontend**: React 18 + Vite + TailwindCSS + Recharts
 - **Backend**: Node.js + Express + Sequelize ORM
 - **Database**: MySQL
 - **Authentication**: JWT
+- **Desktop**: Electron
 
 ## Prerequisites
 
@@ -53,7 +57,7 @@ cp .env.example .env
 npm run dev
 ```
 
-### 3. Frontend Setup
+### 3. Frontend Setup (Web)
 
 ```bash
 cd frontend
@@ -64,6 +68,26 @@ npm install
 # Start development server
 npm run dev
 ```
+
+### 4. Electron Desktop App
+
+```bash
+cd frontend
+
+# Development mode (with hot reload)
+npm run electron:dev
+
+# Build Windows installer
+npm run electron:build:win
+
+# Build Linux AppImage
+npm run electron:build:linux
+
+# Build MacOS DMG
+npm run electron:build:mac
+```
+
+The built installers will be in `frontend/electron-dist/` folder.
 
 ## Configuration
 
@@ -80,19 +104,53 @@ JWT_SECRET=your_secret_key
 JWT_EXPIRES_IN=24h
 ```
 
+Edit `frontend/.env` file:
+
+```env
+VITE_API_URL=http://localhost:3001/api
+```
+
+For production (deployed):
+```env
+VITE_API_URL=https://your-backend-url.com/api
+```
+
+## Default Users
+
+The system automatically seeds these users on first start:
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin123 | Admin |
+| operator | operator123 | Operator |
+
 ## Usage
 
-1. Open http://localhost:3000 in your browser
-2. Register a new account (first user will be admin)
-3. Create a new recipe with elements (fields)
+### Web Application
+1. Open http://localhost:5173 in your browser
+2. Login with admin/admin123
+3. Create recipes with elements (fields)
 4. Add data records to your recipes
-5. Export recipes to CSV
+
+### Desktop Application
+1. Run `npm run electron:dev` for development
+2. Or install the built application
+3. Enter the backend URL if different from localhost
 
 ## User Roles
 
-- **Admin**: Full access - create, edit, delete recipes and records
+- **Admin**: Full access - create, edit, delete recipes, records, and manage users
 - **Operator**: Create and edit recipes and records
 - **Viewer**: Read-only access
+
+## Example Recipes
+
+The system comes with 4 example industrial recipes:
+
+1. **Coil Opener** - Line speed, width, thickness, tension parameters
+2. **Press Machine** - Force, stroke, speed, dwell time settings
+3. **CNC Milling** - Spindle speed, feed rate, depth of cut
+4. **Paint Mixing** - RGB color values and mixing parameters
 
 ## API Endpoints
 
@@ -115,6 +173,15 @@ JWT_EXPIRES_IN=24h
 - `PUT /api/records/:id` - Update record
 - `DELETE /api/records/:id` - Delete record
 
+### Admin (requires admin role)
+- `GET /api/admin/users` - List all users
+- `POST /api/admin/users` - Create user
+- `PUT /api/admin/users/:id` - Update user role
+- `DELETE /api/admin/users/:id` - Delete user
+
+### Health
+- `GET /api/health` - System health check
+
 ### Export
 - `GET /api/recipes/:id/export` - Export recipe as CSV
 
@@ -125,20 +192,28 @@ eymen-web-recipe/
 ├── backend/
 │   ├── src/
 │   │   ├── config/         # Database and JWT configuration
-│   │   ├── controllers/    # Route handlers
 │   │   ├── middleware/     # Authentication middleware
 │   │   ├── models/         # Sequelize models
 │   │   ├── routes/         # API routes
-│   │   └── app.js          # Application entry point
+│   │   └── app.js          # Application entry point (with auto-seed)
 │   ├── package.json
 │   └── .env
 ├── frontend/
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
+│   │   │   ├── Layout.jsx
+│   │   │   ├── DataRecordTable.jsx
+│   │   │   ├── VirtualKeyboard.jsx
+│   │   │   └── RecipeEditor.jsx
 │   │   ├── pages/          # Page components
+│   │   │   ├── Login.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── RecipeManager.jsx
+│   │   │   └── AdminPanel.jsx
 │   │   ├── services/       # API services
 │   │   ├── context/        # React context
 │   │   └── App.jsx
+│   ├── electron.js         # Electron main process
 │   ├── package.json
 │   └── vite.config.js
 ├── database/
@@ -146,6 +221,24 @@ eymen-web-recipe/
 └── README.md
 ```
 
+## Deployment
+
+### Vercel (Frontend)
+```bash
+cd frontend
+vercel deploy
+```
+
+### Railway (Backend + MySQL)
+1. Create a new project on Railway
+2. Add MySQL service
+3. Connect the backend repository
+4. Set environment variables from MySQL
+
 ## License
 
 MIT
+
+## Credits
+
+Developed by Barida Makina - Industrial Solutions
