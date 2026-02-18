@@ -10,7 +10,8 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAddWorkspace, setShowAddWorkspace] = useState(false);
-  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator' });
+  const [showBiometricModal, setShowBiometricModal] = useState(null);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator', workspace_id: '' });
   const [newWorkspace, setNewWorkspace] = useState({ name: '', subdomain: '', company: '', location: '', description: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -73,24 +74,28 @@ export default function AdminPanel() {
     setSuccess('');
     
     try {
-      await api.post('/admin/users', newUser);
-      setSuccess('User created successfully!');
-      setNewUser({ username: '', password: '', role: 'operator' });
+      const userData = {
+        ...newUser,
+        workspace_id: newUser.workspace_id ? parseInt(newUser.workspace_id) : null
+      };
+      await api.post('/admin/users', userData);
+      setSuccess('Kullanıcı başarıyla oluşturuldu!');
+      setNewUser({ username: '', password: '', role: 'operator', workspace_id: '' });
       setShowAddUser(false);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create user');
+      setError(err.response?.data?.error || 'Kullanıcı oluşturulamadı');
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) return;
     
     try {
       await api.delete(`/admin/users/${userId}`);
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to delete user');
+      setError(err.response?.data?.error || 'Kullanıcı silinemedi');
     }
   };
 
@@ -99,7 +104,42 @@ export default function AdminPanel() {
       await api.put(`/admin/users/${userId}`, { role: newRole });
       fetchUsers();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to update role');
+      setError(err.response?.data?.error || 'Rol güncellenemedi');
+    }
+  };
+
+  const handleWorkspaceChange = async (userId, workspaceId) => {
+    try {
+      await api.put(`/admin/users/${userId}`, { 
+        workspace_id: workspaceId ? parseInt(workspaceId) : null 
+      });
+      fetchUsers();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Workspace güncellenemedi');
+    }
+  };
+
+  const handleResetBiometric = async (userId) => {
+    if (!confirm('Biyometrik doğrulamayı sıfırlamak istediğinizden emin misiniz?')) return;
+    
+    try {
+      await api.put(`/admin/users/${userId}/reset-biometric`);
+      setSuccess('Biyometrik doğrulama sıfırlandı');
+      fetchUsers();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Biyometrik sıfırlanamadı');
+    }
+  };
+
+  const handleResetPassword = async (userId) => {
+    const newPassword = prompt('Yeni şifreyi girin:');
+    if (!newPassword) return;
+    
+    try {
+      await api.put(`/admin/users/${userId}/reset-password`, { password: newPassword });
+      setSuccess('Şifre başarıyla değiştirildi');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Şifre değiştirilemedi');
     }
   };
 
@@ -110,23 +150,23 @@ export default function AdminPanel() {
     
     try {
       await api.post('/workspaces', newWorkspace);
-      setSuccess('Workspace created successfully!');
+      setSuccess('Workspace başarıyla oluşturuldu!');
       setNewWorkspace({ name: '', subdomain: '', company: '', location: '', description: '' });
       setShowAddWorkspace(false);
       fetchWorkspaces();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create workspace');
+      setError(err.response?.data?.error || 'Workspace oluşturulamadı');
     }
   };
 
   const handleDeleteWorkspace = async (workspaceId) => {
-    if (!confirm('Are you sure you want to delete this workspace?')) return;
+    if (!confirm('Bu workspace\'i silmek istediğinizden emin misiniz?')) return;
     
     try {
       await api.delete(`/workspaces/${workspaceId}`);
       fetchWorkspaces();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to delete workspace');
+      setError(err.response?.data?.error || 'Workspace silinemedi');
     }
   };
 
@@ -135,7 +175,7 @@ export default function AdminPanel() {
       const response = await api.post(`/workspaces/${workspaceId}/test`);
       setSuccess(`${response.data.workspace}: ${response.data.online ? 'Online' : 'Offline'} (${response.data.ping}ms)`);
     } catch (err) {
-      setError('Failed to test workspace');
+      setError('Workspace test edilemedi');
     }
   };
 
@@ -144,7 +184,7 @@ export default function AdminPanel() {
       await api.put(`/workspaces/${workspaceId}`, { status: newStatus });
       fetchWorkspaces();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to update workspace status');
+      setError(err.response?.data?.error || 'Workspace durumu güncellenemedi');
     }
   };
 
@@ -152,8 +192,8 @@ export default function AdminPanel() {
     return (
       <div className="bg-red-500/20 border border-red-500 rounded-xl p-8 text-center">
         <span className="icon icon-xl text-red-400 mb-4 block">block</span>
-        <h2 className="text-xl font-bold text-red-400">Access Denied</h2>
-        <p className="text-gray-400 mt-2">Admin privileges required</p>
+        <h2 className="text-xl font-bold text-red-400">Erişim Engellendi</h2>
+        <p className="text-gray-400 mt-2">Admin yetkisi gerekli</p>
       </div>
     );
   }
@@ -256,15 +296,15 @@ export default function AdminPanel() {
 
       {/* Notifications */}
       {error && (
-        <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400 flex items-center gap-2">
+        <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-600 flex items-center gap-2">
           <span className="icon icon-sm">error</span> {error}
-          <button onClick={() => setError('')} className="ml-auto">×</button>
+          <button onClick={() => setError('')} className="ml-auto text-xl">×</button>
         </div>
       )}
       {success && (
-        <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-400 flex items-center gap-2">
+        <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-600 flex items-center gap-2">
           <span className="icon icon-sm">check_circle</span> {success}
-          <button onClick={() => setSuccess('')} className="ml-auto">×</button>
+          <button onClick={() => setSuccess('')} className="ml-auto text-xl">×</button>
         </div>
       )}
 
@@ -287,8 +327,8 @@ export default function AdminPanel() {
         {/* Add User Form */}
         {showAddUser && (
           <div className="p-4 bg-gray-50 border-b">
-            <form onSubmit={handleAddUser} className="flex gap-4 items-end">
-              <div className="flex-1">
+            <form onSubmit={handleAddUser} className="grid grid-cols-5 gap-4 items-end">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı</label>
                 <input
                   type="text"
@@ -298,7 +338,7 @@ export default function AdminPanel() {
                   required
                 />
               </div>
-              <div className="flex-1">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
                 <input
                   type="password"
@@ -308,8 +348,8 @@ export default function AdminPanel() {
                   required
                 />
               </div>
-              <div className="w-40">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select
                   value={newUser.role}
                   onChange={(e) => setNewUser({...newUser, role: e.target.value})}
@@ -317,106 +357,186 @@ export default function AdminPanel() {
                 >
                   <option value="viewer">Viewer</option>
                   <option value="operator">Operator</option>
+                  <option value="sub_admin">Alt Admin</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
-              <button
-                type="submit"
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium"
-              >
-                Create
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddUser(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-medium"
-              >
-                Cancel
-              </button>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Workspace</label>
+                <select
+                  value={newUser.workspace_id}
+                  onChange={(e) => setNewUser({...newUser, workspace_id: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Yok (Global)</option>
+                  {workspaces.map(ws => (
+                    <option key={ws.id} value={ws.id}>{ws.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium"
+                >
+                  Oluştur
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddUser(false)}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg font-medium"
+                >
+                  İptal
+                </button>
+              </div>
             </form>
           </div>
         )}
 
         {/* Users Table */}
-        <table className="w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">ID</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Username</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Role</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Created</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {users.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm text-gray-600">#{u.id}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                      {u.username.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="font-medium text-gray-800">{u.username}</span>
-                    {u.id === user.id && (
-                      <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded">You</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <select
-                    value={u.role}
-                    onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                    disabled={u.id === user.id}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                      u.role === 'admin' ? 'bg-red-100 text-red-700' :
-                      u.role === 'operator' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-700'
-                    } ${u.id === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <option value="viewer">Viewer</option>
-                    <option value="operator">Operator</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
-                </td>
-                <td className="px-6 py-4">
-                  {u.id !== user.id && (
-                    <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1"
-                    >
-                      <span className="icon icon-sm">delete</span> Delete
-                    </button>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Kullanıcı</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rol</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Workspace</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Biyometrik</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">İşlemler</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y">
+              {users.map((u) => (
+                <tr key={u.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {u.biometric_photo ? (
+                        <img 
+                          src={u.biometric_photo} 
+                          alt={u.username}
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 ring-blue-500"
+                          onClick={() => setShowBiometricModal(u)}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                          {u.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <span className="font-medium text-gray-800">{u.username}</span>
+                        {u.id === user.id && (
+                          <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded">Siz</span>
+                        )}
+                        <p className="text-xs text-gray-500">
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString('tr-TR') : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={u.role}
+                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                      disabled={u.id === user.id}
+                      className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                        u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        u.role === 'sub_admin' ? 'bg-orange-100 text-orange-700' :
+                        u.role === 'operator' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      } ${u.id === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="viewer">Viewer</option>
+                      <option value="operator">Operator</option>
+                      <option value="sub_admin">Alt Admin</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={u.workspace_id || ''}
+                      onChange={(e) => handleWorkspaceChange(u.id, e.target.value)}
+                      disabled={u.id === user.id || u.role === 'admin'}
+                      className={`px-3 py-1 border rounded-lg text-sm ${
+                        u.id === user.id || u.role === 'admin' ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <option value="">Global</option>
+                      {workspaces.map(ws => (
+                        <option key={ws.id} value={ws.id}>{ws.name}</option>
+                      ))}
+                    </select>
+                    {u.workspace && (
+                      <p className="text-xs text-cyan-600 mt-1">{u.workspace.subdomain}.barida.xyz</p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.role !== 'admin' && (
+                      <div className="flex items-center gap-2">
+                        {u.biometric_verified ? (
+                          <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                            <span className="icon icon-sm">verified</span> Doğrulandı
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-medium">
+                            <span className="icon icon-sm">pending</span> Bekliyor
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.id !== user.id && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleResetPassword(u.id)}
+                          className="p-1 text-blue-500 hover:bg-blue-100 rounded"
+                          title="Şifre Sıfırla"
+                        >
+                          <span className="icon icon-sm">key</span>
+                        </button>
+                        {u.role !== 'admin' && (
+                          <button
+                            onClick={() => handleResetBiometric(u.id)}
+                            className="p-1 text-orange-500 hover:bg-orange-100 rounded"
+                            title="Biyometrik Sıfırla"
+                          >
+                            <span className="icon icon-sm">face_retouching_off</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteUser(u.id)}
+                          className="p-1 text-red-500 hover:bg-red-100 rounded"
+                          title="Sil"
+                        >
+                          <span className="icon icon-sm">delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {users.length === 0 && (
           <div className="p-8 text-center text-gray-500">
-            No users found
+            Kullanıcı bulunamadı
           </div>
         )}
       </div>
 
       {/* Role Descriptions */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="font-semibold text-gray-800 mb-4">Role Permissions</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <h3 className="font-semibold text-gray-800 mb-4">Rol Yetkileri</h3>
+        <div className="grid grid-cols-4 gap-4">
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-sm font-medium">Viewer</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View recipes</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View data records</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Create/Edit recipes</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Admin panel</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Reçeteleri görüntüle</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">close</span> Düzenleme yetkisi yok</li>
             </ul>
           </div>
           <div className="p-4 bg-blue-50 rounded-lg">
@@ -424,10 +544,17 @@ export default function AdminPanel() {
               <span className="bg-blue-200 text-blue-700 px-2 py-0.5 rounded text-sm font-medium">Operator</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View recipes</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Create/Edit recipes</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Manage data records</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Admin panel</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Reçete düzenleme</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Kayıt yönetimi</li>
+            </ul>
+          </div>
+          <div className="p-4 bg-orange-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-orange-200 text-orange-700 px-2 py-0.5 rounded text-sm font-medium">Alt Admin</span>
+            </div>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Workspace yönetimi</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Kullanıcı yönetimi (ws)</li>
             </ul>
           </div>
           <div className="p-4 bg-red-50 rounded-lg">
@@ -435,10 +562,8 @@ export default function AdminPanel() {
               <span className="bg-red-200 text-red-700 px-2 py-0.5 rounded text-sm font-medium">Admin</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Full recipe access</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> User management</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> System monitoring</li>
-              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> All permissions</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Tüm yetkiler</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check</span> Sistem yönetimi</li>
             </ul>
           </div>
         </div>
@@ -536,7 +661,9 @@ export default function AdminPanel() {
         {/* Workspaces Grid */}
         <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {workspaces.map((workspace) => (
+            {workspaces.map((workspace) => {
+              const workspaceUsers = users.filter(u => u.workspace_id === workspace.id);
+              return (
               <div key={workspace.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-cyan-300 transition">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -572,9 +699,21 @@ export default function AdminPanel() {
                     <span className="icon icon-sm">location_on</span> {workspace.location}
                   </p>
                 )}
-                {workspace.description && (
-                  <p className="text-xs text-gray-400 mb-3 line-clamp-2">{workspace.description}</p>
-                )}
+                
+                {/* Workspace Users */}
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-xs text-gray-500 mb-2">Kullanıcılar ({workspaceUsers.length})</p>
+                  <div className="flex flex-wrap gap-1">
+                    {workspaceUsers.slice(0, 5).map(u => (
+                      <span key={u.id} className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs">
+                        {u.username}
+                      </span>
+                    ))}
+                    {workspaceUsers.length > 5 && (
+                      <span className="text-gray-400 text-xs">+{workspaceUsers.length - 5} daha</span>
+                    )}
+                  </div>
+                </div>
                 
                 <div className="flex gap-2 mt-3 pt-3 border-t">
                   <button
@@ -591,7 +730,7 @@ export default function AdminPanel() {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
 
             {workspaces.length === 0 && (
               <div className="col-span-full p-12 text-center text-gray-400">
@@ -608,50 +747,37 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+      </>
+      )}
 
-      {/* Workspace Info */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="icon icon-sm">info</span> Workspace Sistemi Hakkında
-        </h3>
-        <div className="grid grid-cols-2 gap-6 text-sm text-gray-600">
-          <div>
-            <h4 className="font-medium text-gray-800 mb-2">Nasıl Çalışır?</h4>
-            <ul className="space-y-1">
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-cyan-500 mt-0.5">check</span>
-                Her fabrika/müşteri için ayrı subdomain oluşturulur
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-cyan-500 mt-0.5">check</span>
-                workspace1.barida.xyz, fabrika2.barida.xyz vb.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-cyan-500 mt-0.5">check</span>
-                Her workspace izole veri ve kullanıcılara sahiptir
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-800 mb-2">Kurulum Gereksinimleri</h4>
-            <ul className="space-y-1">
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-orange-500 mt-0.5">warning</span>
-                Vercel'de *.barida.xyz wildcard domain gerekli
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-orange-500 mt-0.5">warning</span>
-                DNS A/CNAME kaydı *.barida.xyz → Vercel
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="icon icon-sm text-blue-500 mt-0.5">info</span>
-                admin.barida.xyz bu panele yönlendirilmeli
-              </li>
-            </ul>
+      {/* Biometric Photo Modal */}
+      {showBiometricModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowBiometricModal(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Biyometrik Fotoğraf</h3>
+              <button onClick={() => setShowBiometricModal(null)} className="text-gray-400 hover:text-gray-600">
+                <span className="icon">close</span>
+              </button>
+            </div>
+            <div className="text-center">
+              <img 
+                src={showBiometricModal.biometric_photo} 
+                alt={showBiometricModal.username}
+                className="w-64 h-64 rounded-xl object-cover mx-auto mb-4"
+              />
+              <h4 className="font-semibold text-gray-800">{showBiometricModal.username}</h4>
+              <p className="text-sm text-gray-500">
+                {showBiometricModal.workspace?.name || 'Global Kullanıcı'}
+              </p>
+              {showBiometricModal.biometric_verified && (
+                <span className="inline-flex items-center gap-1 mt-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                  <span className="icon icon-sm">verified</span> Doğrulanmış
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      </>
       )}
     </div>
   );

@@ -24,6 +24,8 @@ RecordValue.belongsTo(RecipeElement, { foreignKey: 'element_id', as: 'element' }
 ActivityLog.belongsTo(User, { foreignKey: 'user_id' });
 
 Workspace.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+Workspace.hasMany(User, { foreignKey: 'workspace_id', as: 'users' });
+User.belongsTo(Workspace, { foreignKey: 'workspace_id', as: 'workspace' });
 
 module.exports = {
   User,

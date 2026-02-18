@@ -17,15 +17,15 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (username, password) => {
-    const response = await api.post('/auth/login', { username, password });
-    const { token, user } = response.data;
+  const login = async (username, password, subdomain = null) => {
+    const response = await api.post('/auth/login', { username, password, subdomain });
+    const { token, user, requiresBiometric } = response.data;
     
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
     
-    return user;
+    return { user, requiresBiometric };
   };
 
   const logout = () => {
@@ -34,13 +34,20 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const register = async (username, password, role) => {
-    const response = await api.post('/auth/register', { username, password, role });
-    return response.data;
+  const refreshUser = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      localStorage.setItem('user', JSON.stringify(response.data));
+      setUser(response.data);
+      return response.data;
+    } catch (err) {
+      logout();
+      return null;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, loading }}>
       {children}
     </AuthContext.Provider>
   );

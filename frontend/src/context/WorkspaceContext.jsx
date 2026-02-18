@@ -9,6 +9,8 @@ export const WorkspaceProvider = ({ children }) => {
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubdomain, setIsSubdomain] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const [isIdentityDomain, setIsIdentityDomain] = useState(false);
 
   useEffect(() => {
     detectWorkspace();
@@ -21,6 +23,7 @@ export const WorkspaceProvider = ({ children }) => {
       // Check if we're on a subdomain
       // barida.xyz, www.barida.xyz -> main site
       // workspace1.barida.xyz -> workspace
+      // identity.barida.xyz -> identity verification
       const parts = hostname.split('.');
       
       // localhost or IP
@@ -38,6 +41,13 @@ export const WorkspaceProvider = ({ children }) => {
           setLoading(false);
           return;
         }
+
+        // Identity subdomain for biometric verification
+        if (subdomain === 'identity') {
+          setIsIdentityDomain(true);
+          setLoading(false);
+          return;
+        }
         
         // Try to fetch workspace info
         try {
@@ -45,7 +55,10 @@ export const WorkspaceProvider = ({ children }) => {
           setWorkspace(response.data);
           setIsSubdomain(true);
         } catch (err) {
-          // Workspace not found, continue as main site
+          // Workspace not found - show 404
+          if (err.response?.status === 404) {
+            setNotFound(true);
+          }
           console.log('Workspace not found:', subdomain);
         }
       }
@@ -60,6 +73,8 @@ export const WorkspaceProvider = ({ children }) => {
     workspace,
     isSubdomain,
     loading,
+    notFound,
+    isIdentityDomain,
     workspaceName: workspace?.name || 'Barida Recipe Management'
   };
 

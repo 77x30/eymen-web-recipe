@@ -17,14 +17,38 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   role: {
-    type: DataTypes.ENUM('admin', 'operator', 'viewer'),
-    defaultValue: 'viewer'
+    type: DataTypes.ENUM('admin', 'sub_admin', 'operator', 'viewer'),
+    defaultValue: 'operator'
+  },
+  workspace_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'workspaces',
+      key: 'id'
+    }
+  },
+  biometric_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  biometric_photo: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  verification_token: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  first_login: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
 }, {
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: false
+  updatedAt: 'updated_at'
 });
 
 module.exports = User;

@@ -20,3 +20,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.vs/
+
+# WinForms
+*.WebView2/
+winforms/BaridaRecipeManager/bin/Debug/
+winforms/BaridaRecipeManager/obj/Debug/
