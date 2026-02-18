@@ -4,14 +4,27 @@ const { User, Recipe, DataRecord, Workspace } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 
-// All admin routes require admin role
+// All admin routes require admin or sub_admin role
 router.use(authenticate);
-router.use(authorize('admin'));
 
-// Get all users
-router.get('/users', async (req, res) => {
+// Helper to check if user can manage another user
+const canManageRole = (managerRole, targetRole) => {
+  const hierarchy = { admin: 4, sub_admin: 3, operator: 2, viewer: 1 };
+  return hierarchy[managerRole] > hierarchy[targetRole];
+};
+
+// Get all users (filtered for sub_admin)
+router.get('/users', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
+    const whereClause = {};
+    
+    // sub_admin can only see users in their workspace
+    if (req.user.role === 'sub_admin') {
+      whereClause.workspace_id = req.user.workspace_id;
+    }
+    
     const users = await User.findAll({
+      where: whereClause,
       attributes: ['id', 'username', 'role', 'workspace_id', 'biometric_verified', 'biometric_photo', 'first_login', 'created_at'],
       include: [{ model: Workspace, as: 'workspace', attributes: ['id', 'name', 'subdomain'] }],
       order: [['created_at', 'DESC']]
@@ -24,8 +37,13 @@ router.get('/users', async (req, res) => {
 });
 
 // Get users by workspace
-router.get('/workspaces/:workspaceId/users', async (req, res) => {
+router.get('/workspaces/:workspaceId/users', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
+    // sub_admin can only access their own workspace
+    if (req.user.role === 'sub_admin' && req.user.workspace_id !== parseInt(req.params.workspaceId)) {
+      return res.status(403).json({ error: 'Access denied to this workspace' });
+    }
+    
     const users = await User.findAll({
       where: { workspace_id: req.params.workspaceId },
       attributes: ['id', 'username', 'role', 'biometric_verified', 'biometric_photo', 'first_login', 'created_at'],
@@ -39,9 +57,30 @@ router.get('/workspaces/:workspaceId/users', async (req, res) => {
 });
 
 // Create new user (with workspace assignment)
-router.post('/users', async (req, res) => {
+router.post('/users', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
     const { username, password, role, workspace_id } = req.body;
+
+    // sub_admin restrictions
+    if (req.user.role === 'sub_admin') {
+      // Can only add to their own workspace
+      if (workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You can only add users to your own workspace' });
+      }
+      
+      // Can only add operator or viewer (not admin or sub_admin)
+      if (role === 'admin' || role === 'sub_admin') {
+        return res.status(403).json({ error: 'You cannot create admin or sub_admin users' });
+      }
+      
+      // Check user limit (max 4 users per sub_admin)
+      const userCount = await User.count({ 
+        where: { workspace_id: req.user.workspace_id }
+      });
+      if (userCount >= 4) {
+        return res.status(403).json({ error: 'User limit reached (max 4 users per workspace)' });
+      }
+    }
 
     const existingUser = await User.findOne({ where: { username } });
     if (existingUser) {
@@ -79,14 +118,37 @@ router.post('/users', async (req, res) => {
 });
 
 // Update user role and workspace
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
     const { role, workspace_id } = req.body;
     const userId = req.params.id;
 
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const targetUser = await User.findByPk(userId);
+    if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // sub_admin restrictions
+    if (req.user.role === 'sub_admin') {
+      // Can only manage users in their workspace
+      if (targetUser.workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You can only manage users in your workspace' });
+      }
+      
+      // Cannot change to admin or sub_admin
+      if (role === 'admin' || role === 'sub_admin') {
+        return res.status(403).json({ error: 'You cannot assign admin or sub_admin roles' });
+      }
+      
+      // Cannot change workspace
+      if (workspace_id !== undefined && workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You cannot move users to another workspace' });
+      }
+      
+      // Cannot manage admin or sub_admin users
+      if (!canManageRole(req.user.role, targetUser.role)) {
+        return res.status(403).json({ error: 'You cannot manage this user' });
+      }
     }
 
     // Validate workspace if provided
@@ -97,9 +159,9 @@ router.put('/users/:id', async (req, res) => {
       }
     }
 
-    await user.update({ 
-      role: role || user.role,
-      workspace_id: workspace_id !== undefined ? workspace_id : user.workspace_id
+    await targetUser.update({ 
+      role: role || targetUser.role,
+      workspace_id: workspace_id !== undefined ? workspace_id : targetUser.workspace_id
     });
 
     const updatedUser = await User.findByPk(userId, {
@@ -115,20 +177,30 @@ router.put('/users/:id', async (req, res) => {
 });
 
 // Reset user password
-router.put('/users/:id/reset-password', async (req, res) => {
+router.put('/users/:id/reset-password', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
     const { password } = req.body;
     const userId = req.params.id;
 
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const targetUser = await User.findByPk(userId);
+    if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // sub_admin restrictions
+    if (req.user.role === 'sub_admin') {
+      if (targetUser.workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You can only manage users in your workspace' });
+      }
+      if (!canManageRole(req.user.role, targetUser.role)) {
+        return res.status(403).json({ error: 'You cannot manage this user' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    await user.update({ 
+    await targetUser.update({ 
       password_hash: hashedPassword,
-      first_login: true // Force biometric verification on next login
+      first_login: true
     });
 
     res.json({ message: 'Password reset successfully' });
@@ -139,16 +211,26 @@ router.put('/users/:id/reset-password', async (req, res) => {
 });
 
 // Reset biometric verification
-router.put('/users/:id/reset-biometric', async (req, res) => {
+router.put('/users/:id/reset-biometric', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const targetUser = await User.findByPk(userId);
+    if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    await user.update({ 
+    // sub_admin restrictions
+    if (req.user.role === 'sub_admin') {
+      if (targetUser.workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You can only manage users in your workspace' });
+      }
+      if (!canManageRole(req.user.role, targetUser.role)) {
+        return res.status(403).json({ error: 'You cannot manage this user' });
+      }
+    }
+
+    await targetUser.update({ 
       biometric_verified: false,
       biometric_photo: null,
       first_login: true
@@ -162,7 +244,7 @@ router.put('/users/:id/reset-biometric', async (req, res) => {
 });
 
 // Delete user
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -171,12 +253,22 @@ router.delete('/users/:id', async (req, res) => {
       return res.status(400).json({ error: 'Cannot delete yourself' });
     }
 
-    const user = await User.findByPk(userId);
-    if (!user) {
+    const targetUser = await User.findByPk(userId);
+    if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    await user.destroy();
+    // sub_admin restrictions
+    if (req.user.role === 'sub_admin') {
+      if (targetUser.workspace_id !== req.user.workspace_id) {
+        return res.status(403).json({ error: 'You can only manage users in your workspace' });
+      }
+      if (!canManageRole(req.user.role, targetUser.role)) {
+        return res.status(403).json({ error: 'You cannot delete this user' });
+      }
+    }
+
+    await targetUser.destroy();
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
@@ -185,13 +277,22 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 // Get system stats
-router.get('/stats', async (req, res) => {
+router.get('/stats', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
-    const [userCount, recipeCount, recordCount, workspaceCount] = await Promise.all([
-      User.count(),
+    let userCount, workspaceCount;
+    
+    if (req.user.role === 'sub_admin') {
+      // sub_admin only sees their workspace stats
+      userCount = await User.count({ where: { workspace_id: req.user.workspace_id } });
+      workspaceCount = 1;
+    } else {
+      userCount = await User.count();
+      workspaceCount = await Workspace.count();
+    }
+    
+    const [recipeCount, recordCount] = await Promise.all([
       Recipe.count(),
-      DataRecord.count(),
-      Workspace.count()
+      DataRecord.count()
     ]);
 
     res.json({

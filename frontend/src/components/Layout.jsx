@@ -62,7 +62,7 @@ export default function Layout() {
               >
                 <span className="icon icon-sm">receipt_long</span> Recipes
               </Link>
-              {user?.role === 'admin' && (
+              {(user?.role === 'admin' || user?.role === 'sub_admin') && (
                 <Link 
                   to="/admin" 
                   className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
@@ -71,7 +71,8 @@ export default function Layout() {
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                   }`}
                 >
-                  <span className="icon icon-sm">admin_panel_settings</span> Admin
+                  <span className="icon icon-sm">admin_panel_settings</span> 
+                  {user?.role === 'sub_admin' ? 'Yönetim' : 'Admin'}
                 </Link>
               )}
             </nav>

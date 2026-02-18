@@ -76,7 +76,7 @@ export default function AdminPanel() {
     try {
       const userData = {
         ...newUser,
-        workspace_id: newUser.workspace_id ? parseInt(newUser.workspace_id) : null
+        workspace_id: isSubAdmin ? user?.workspace_id : (newUser.workspace_id ? parseInt(newUser.workspace_id) : null)
       };
       await api.post('/admin/users', userData);
       setSuccess('Kullanıcı başarıyla oluşturuldu!');
@@ -188,7 +188,30 @@ export default function AdminPanel() {
     }
   };
 
-  if (user?.role !== 'admin') {
+  const isAdmin = user?.role === 'admin';
+  const isSubAdmin = user?.role === 'sub_admin';
+
+  // sub_admin can only see their own workspace
+  const availableWorkspaces = isSubAdmin 
+    ? workspaces.filter(ws => ws.id === user?.workspace_id)
+    : workspaces;
+
+  // Roles that sub_admin can assign
+  const availableRoles = isSubAdmin 
+    ? [{ value: 'operator', label: 'Operator' }, { value: 'viewer', label: 'Viewer' }]
+    : [
+        { value: 'viewer', label: 'Viewer' },
+        { value: 'operator', label: 'Operator' },
+        { value: 'sub_admin', label: 'Alt Admin' },
+        { value: 'admin', label: 'Admin' }
+      ];
+
+  // Count users in workspace for sub_admin limit
+  const workspaceUserCount = isSubAdmin 
+    ? users.filter(u => u.workspace_id === user?.workspace_id).length
+    : 0;
+
+  if (!isAdmin && !isSubAdmin) {
     return (
       <div className="bg-red-500/20 border border-red-500 rounded-xl p-8 text-center">
         <span className="icon icon-xl text-red-400 mb-4 block">block</span>
@@ -209,8 +232,10 @@ export default function AdminPanel() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
-        {/* Tabs */}
+        <h1 className="text-2xl font-bold text-gray-800">
+          {isSubAdmin ? 'Workspace Yönetimi' : 'Admin Panel'}
+        </h1>
+        {/* Tabs - sub_admin only sees limited tabs */}
         <div className="flex bg-gray-200 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('users')}
@@ -220,14 +245,16 @@ export default function AdminPanel() {
           >
             <span className="icon icon-sm">group</span> Kullanıcılar
           </button>
-          <button
-            onClick={() => setActiveTab('workspaces')}
-            className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-              activeTab === 'workspaces' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <span className="icon icon-sm">domain</span> Workspaces
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('workspaces')}
+              className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                activeTab === 'workspaces' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <span className="icon icon-sm">domain</span> Workspaces
+            </button>
+          )}
         </div>
       </div>
 
@@ -315,10 +342,20 @@ export default function AdminPanel() {
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex justify-between items-center">
           <h2 className="text-white font-semibold flex items-center gap-2">
             <span className="icon icon-sm">group</span> Kullanıcı Yönetimi
+            {isSubAdmin && (
+              <span className="ml-2 text-xs bg-orange-500/30 text-orange-200 px-2 py-1 rounded">
+                {workspaceUserCount}/4 kullanıcı
+              </span>
+            )}
           </h2>
           <button
             onClick={() => setShowAddUser(!showAddUser)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
+            disabled={isSubAdmin && workspaceUserCount >= 4}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
+              isSubAdmin && workspaceUserCount >= 4 
+                ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
           >
             <span className="icon icon-sm">person_add</span> Kullanıcı Ekle
           </button>
@@ -355,23 +392,31 @@ export default function AdminPanel() {
                   onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  <option value="viewer">Viewer</option>
-                  <option value="operator">Operator</option>
-                  <option value="sub_admin">Alt Admin</option>
-                  <option value="admin">Admin</option>
+                  {availableRoles.map(r => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Workspace</label>
                 <select
-                  value={newUser.workspace_id}
+                  value={isSubAdmin ? user?.workspace_id : newUser.workspace_id}
                   onChange={(e) => setNewUser({...newUser, workspace_id: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  disabled={isSubAdmin}
+                  className={`w-full px-3 py-2 border rounded-lg ${isSubAdmin ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 >
-                  <option value="">Yok (Global)</option>
-                  {workspaces.map(ws => (
-                    <option key={ws.id} value={ws.id}>{ws.name}</option>
-                  ))}
+                  {isSubAdmin ? (
+                    availableWorkspaces.map(ws => (
+                      <option key={ws.id} value={ws.id}>{ws.name}</option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="">Yok (Global)</option>
+                      {workspaces.map(ws => (
+                        <option key={ws.id} value={ws.id}>{ws.name}</option>
+                      ))}
+                    </>
+                  )}
                 </select>
               </div>
               <div className="flex gap-2">
@@ -437,27 +482,36 @@ export default function AdminPanel() {
                     <select
                       value={u.role}
                       onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      disabled={u.id === user.id}
+                      disabled={u.id === user.id || (isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin'))}
                       className={`px-3 py-1 rounded-lg text-sm font-medium ${
                         u.role === 'admin' ? 'bg-red-100 text-red-700' :
                         u.role === 'sub_admin' ? 'bg-orange-100 text-orange-700' :
                         u.role === 'operator' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
-                      } ${u.id === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${u.id === user.id || (isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin')) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      <option value="viewer">Viewer</option>
-                      <option value="operator">Operator</option>
-                      <option value="sub_admin">Alt Admin</option>
-                      <option value="admin">Admin</option>
+                      {isSubAdmin ? (
+                        <>
+                          <option value="viewer">Viewer</option>
+                          <option value="operator">Operator</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="viewer">Viewer</option>
+                          <option value="operator">Operator</option>
+                          <option value="sub_admin">Alt Admin</option>
+                          <option value="admin">Admin</option>
+                        </>
+                      )}
                     </select>
                   </td>
                   <td className="px-4 py-3">
                     <select
                       value={u.workspace_id || ''}
                       onChange={(e) => handleWorkspaceChange(u.id, e.target.value)}
-                      disabled={u.id === user.id || u.role === 'admin'}
+                      disabled={u.id === user.id || u.role === 'admin' || isSubAdmin}
                       className={`px-3 py-1 border rounded-lg text-sm ${
-                        u.id === user.id || u.role === 'admin' ? 'opacity-50 cursor-not-allowed' : ''
+                        u.id === user.id || u.role === 'admin' || isSubAdmin ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       <option value="">Global</option>
@@ -485,7 +539,7 @@ export default function AdminPanel() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {u.id !== user.id && (
+                    {u.id !== user.id && !(isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin')) && (
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleResetPassword(u.id)}
