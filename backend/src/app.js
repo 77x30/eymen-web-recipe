@@ -198,7 +198,7 @@ async function seedDatabase() {
 }
 
 // Database sync and server start
-sequelize.sync({ alter: true })
+sequelize.sync({ alter: false })
   .then(async () => {
     console.log('Database synchronized');
     await seedDatabase();
