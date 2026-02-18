@@ -15,9 +15,20 @@ export default function Login() {
   const [verificationToken, setVerificationToken] = useState('');
   const [checkingVerification, setCheckingVerification] = useState(false);
   const { login, setUserFromToken } = useAuth();
-  const { workspace, isSubdomain } = useWorkspace();
+  const { workspace, isSubdomain, isMainDomain } = useWorkspace();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Clear localStorage on page load (no "remember me" feature)
+  useEffect(() => {
+    // Check if we're receiving a redirect token
+    const tokenFromUrl = searchParams.get('token');
+    if (!tokenFromUrl) {
+      // No redirect token - clear any existing session
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  }, []);
 
   // Check for token in URL (redirect from main domain)
   useEffect(() => {

@@ -3,24 +3,35 @@ import { useAuth } from './context/AuthContext';
 import { useWorkspace } from './context/WorkspaceContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import RecipeManager from './pages/RecipeManager';
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import BiometricVerification from './pages/BiometricVerification';
 import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
 
-const PrivateRoute = ({ children }) => {
+const PrivateRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
   
-  return user ? children : <Navigate to="/login" />;
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  // Admin only routes
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
 };
 
 function App() {
-  const { notFound, isIdentityDomain, loading: workspaceLoading } = useWorkspace();
+  const { notFound, isIdentityDomain, isMainDomain, isSubdomain, loading: workspaceLoading } = useWorkspace();
 
   // Show loading while checking workspace
   if (workspaceLoading) {
@@ -59,6 +70,26 @@ function App() {
     );
   }
 
+  // Main domain (barida.xyz) - Admin dashboard only, no recipes
+  if (isMainDomain && !isSubdomain) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <PrivateRoute adminOnly>
+            <AdminLayout />
+          </PrivateRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="workspaces" element={<AdminPanel />} />
+          <Route path="users" element={<AdminPanel />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+
+  // Subdomain - workspace with recipes
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

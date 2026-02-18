@@ -9,6 +9,7 @@ export const WorkspaceProvider = ({ children }) => {
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubdomain, setIsSubdomain] = useState(false);
+  const [isMainDomain, setIsMainDomain] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [isIdentityDomain, setIsIdentityDomain] = useState(false);
 
@@ -26,8 +27,9 @@ export const WorkspaceProvider = ({ children }) => {
       // identity.barida.xyz -> identity verification
       const parts = hostname.split('.');
       
-      // localhost or IP
+      // localhost or IP - treat as main domain for development
       if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        setIsMainDomain(true);
         setLoading(false);
         return;
       }
@@ -36,8 +38,9 @@ export const WorkspaceProvider = ({ children }) => {
       if (parts.length >= 3) {
         const subdomain = parts[0];
         
-        // Skip www and admin
+        // Skip www and admin - these are main domain
         if (subdomain === 'www' || subdomain === 'admin') {
+          setIsMainDomain(true);
           setLoading(false);
           return;
         }
@@ -61,6 +64,9 @@ export const WorkspaceProvider = ({ children }) => {
           }
           console.log('Workspace not found:', subdomain);
         }
+      } else {
+        // barida.xyz (2 parts) - main domain
+        setIsMainDomain(true);
       }
     } catch (error) {
       console.error('Error detecting workspace:', error);
@@ -72,6 +78,7 @@ export const WorkspaceProvider = ({ children }) => {
   const value = {
     workspace,
     isSubdomain,
+    isMainDomain,
     loading,
     notFound,
     isIdentityDomain,
