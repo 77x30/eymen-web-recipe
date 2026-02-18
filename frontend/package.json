@@ -29,15 +29,9 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "public/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "public/icon.ico",
-      "uninstallerIcon": "public/icon.ico",
-      "installerHeaderIcon": "public/icon.ico"
+      "target": "dir",
+      "icon": "public/icon.ico",
+      "signAndEditExecutable": false
     },
     "linux": {
       "target": "AppImage",
