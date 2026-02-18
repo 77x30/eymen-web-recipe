@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import RecipeManager from './pages/RecipeManager';
 import AdminPanel from './pages/AdminPanel';
+import MachineControl from './pages/MachineControl';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }) => {
@@ -28,6 +29,7 @@ function App() {
         <Route index element={<Dashboard />} />
         <Route path="recipes" element={<RecipeManager />} />
         <Route path="recipes/:id" element={<RecipeManager />} />
+        <Route path="machine" element={<MachineControl />} />
         <Route path="admin" element={<AdminPanel />} />
       </Route>
     </Routes>

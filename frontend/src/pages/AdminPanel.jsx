@@ -14,7 +14,7 @@ export default function AdminPanel() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchSystemStatus, 30000); // Update every 30s
+    const interval = setInterval(fetchSystemStatus, 1000); // Update every 1s
     return () => clearInterval(interval);
   }, []);
 

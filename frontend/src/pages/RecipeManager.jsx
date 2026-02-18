@@ -131,15 +131,19 @@ export default function RecipeManager() {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `${selectedRecipe.name}_export.csv`);
+      link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       setStatus({ type: 'success', message: 'Recipe exported' });
     } catch (error) {
+      console.error('Export error:', error);
       setStatus({ type: 'error', message: 'Error exporting recipe' });
     }
   };
