@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { User, Recipe, DataRecord } = require('../models');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 
 // All admin routes require admin role
-router.use(authenticateToken);
-router.use(authorizeRoles('admin'));
+router.use(authenticate);
+router.use(authorize('admin'));
 
 // Get all users
 router.get('/users', async (req, res) => {
