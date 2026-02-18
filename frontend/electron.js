@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, nativeImage } = require('electron');
 const path = require('path');
 const https = require('https');
 
@@ -12,6 +12,7 @@ const VERSION_CHECK_URL = 'https://raw.githubusercontent.com/77x30/eymen-web-rec
 // Keep global references
 let mainWindow;
 let splashWindow;
+let lastKnownVersion = APP_VERSION;
 
 // Check for updates
 function checkForUpdates() {
@@ -38,8 +39,113 @@ function checkForUpdates() {
   });
 }
 
+// Check for live updates (website content changes)
+function startLiveUpdateChecker() {
+  setInterval(async () => {
+    if (!mainWindow) return;
+    
+    try {
+      const response = await fetch(`${PRODUCTION_URL}/api/health`);
+      const data = await response.json();
+      
+      // Check if there's a content update (could be based on build hash, timestamp, etc.)
+      if (data.buildVersion && data.buildVersion !== lastKnownVersion) {
+        lastKnownVersion = data.buildVersion;
+        showLiveUpdateNotification();
+      }
+    } catch (e) {
+      // Silently fail
+    }
+  }, 30000); // Check every 30 seconds
+}
+
+// Show live update notification and reload
+function showLiveUpdateNotification() {
+  if (!mainWindow) return;
+  
+  // Inject live update overlay
+  mainWindow.webContents.executeJavaScript(`
+    (function() {
+      // Remove existing overlay if any
+      const existing = document.getElementById('live-update-overlay');
+      if (existing) existing.remove();
+      
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'live-update-overlay';
+      overlay.innerHTML = \`
+        <style>
+          #live-update-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(30, 58, 138, 0.95);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            animation: fadeIn 0.3s ease;
+          }
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+          }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .update-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: pulse 1s ease infinite;
+          }
+          .update-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+          }
+          .update-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+          }
+          .update-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+        </style>
+        <div class="update-icon">🔄</div>
+        <div class="update-title">Canlı Güncelleme</div>
+        <div class="update-subtitle">Yeni içerik yükleniyor...</div>
+        <div class="update-spinner"></div>
+      \`;
+      document.body.appendChild(overlay);
+      
+      // Reload after animation
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    })();
+  `);
+}
+
 // Create splash screen
 function createSplashWindow() {
+  const iconPath = path.join(__dirname, 'public', 'icon.png');
+  
   splashWindow = new BrowserWindow({
     width: 500,
     height: 400,
@@ -48,7 +154,7 @@ function createSplashWindow() {
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
-    icon: path.join(__dirname, 'public/icon.png'),
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true
@@ -172,12 +278,14 @@ function createSplashWindow() {
 
 // Create main window
 function createWindow() {
+  const iconPath = path.join(__dirname, 'public', 'icon.png');
+  
   mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
     minWidth: 1024,
     minHeight: 768,
-    icon: path.join(__dirname, 'public/icon.png'),
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -202,90 +310,13 @@ function createWindow() {
     }
     mainWindow.show();
     mainWindow.focus();
+    
+    // Start live update checker
+    startLiveUpdateChecker();
   });
 
-  // Create application menu
-  const menuTemplate = [
-    {
-      label: 'Dosya',
-      submenu: [
-        { label: 'Yenile', role: 'reload' },
-        { label: 'Zorla Yenile', role: 'forceReload' },
-        { type: 'separator' },
-        { label: 'Çıkış', role: 'quit' }
-      ]
-    },
-    {
-      label: 'Görünüm',
-      submenu: [
-        { label: 'Yakınlaştırmayı Sıfırla', role: 'resetZoom' },
-        { label: 'Yakınlaştır', role: 'zoomIn' },
-        { label: 'Uzaklaştır', role: 'zoomOut' },
-        { type: 'separator' },
-        { label: 'Tam Ekran', role: 'togglefullscreen' }
-      ]
-    },
-    {
-      label: 'Yardım',
-      submenu: [
-        {
-          label: 'Hakkında',
-          click: async () => {
-            const updateInfo = await checkForUpdates();
-            const updateStatus = updateInfo.updateAvailable 
-              ? `⚠️ Yeni sürüm mevcut: v${updateInfo.latestVersion}`
-              : '✅ Uygulama güncel';
-            
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'Hakkında',
-              message: APP_NAME,
-              detail: `Sürüm: v${APP_VERSION}\n${updateStatus}\n\nOluşturan: ${CREATOR}\n\n© 2026 Barida Makina\nEndüstriyel Çözümler`,
-              buttons: ['Tamam']
-            });
-          }
-        },
-        {
-          label: 'Güncellemeleri Kontrol Et',
-          click: async () => {
-            const updateInfo = await checkForUpdates();
-            if (updateInfo.updateAvailable) {
-              const result = await dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'Güncelleme Mevcut',
-                message: `Yeni sürüm mevcut: v${updateInfo.latestVersion}`,
-                detail: `Mevcut sürüm: v${APP_VERSION}\n\nGüncelleme için web sitesini ziyaret edin.`,
-                buttons: ['Web Sitesini Aç', 'Daha Sonra']
-              });
-              if (result.response === 0) {
-                shell.openExternal('https://github.com/77x30/eymen-web-recipe/releases');
-              }
-            } else {
-              dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'Güncelleme Yok',
-                message: 'Uygulama güncel!',
-                detail: `Mevcut sürüm: v${APP_VERSION}`,
-                buttons: ['Tamam']
-              });
-            }
-          }
-        },
-        { type: 'separator' },
-        {
-          label: 'GitHub',
-          click: () => shell.openExternal('https://github.com/77x30/eymen-web-recipe')
-        },
-        {
-          label: 'Barida Makina',
-          click: () => shell.openExternal('https://www.baridamakina.com')
-        }
-      ]
-    }
-  ];
-
-  const menu = Menu.buildFromTemplate(menuTemplate);
-  Menu.setApplicationMenu(menu);
+  // Remove menu completely (no Dosya, Görünüm, Yardım)
+  Menu.setApplicationMenu(null);
 
   // Handle window closed
   mainWindow.on('closed', () => {

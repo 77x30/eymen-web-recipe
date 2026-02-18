@@ -19,7 +19,7 @@
   },
   "build": {
     "appId": "com.barida.recipe-manager",
-    "productName": "Barida Recipe Manager",
+    "productName": "Barida Recipe Management System",
     "copyright": "Copyright © 2026 Barida Makina",
     "directories": {
       "output": "electron-dist"
@@ -27,11 +27,12 @@
     "files": [
       "dist/**/*",
       "electron.js",
-      "package.json"
+      "package.json",
+      "public/**/*"
     ],
     "win": {
       "target": "dir",
-      "icon": "public/icon.png",
+      "icon": "public/icon.ico",
       "signAndEditExecutable": false
     },
     "linux": {
