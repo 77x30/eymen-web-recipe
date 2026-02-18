@@ -22,18 +22,14 @@ const User = sequelize.define('User', {
   },
   workspace_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'workspaces',
-      key: 'id'
-    }
+    allowNull: true
   },
   biometric_verified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
   biometric_photo: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT('long'),
     allowNull: true
   },
   verification_token: {
@@ -48,7 +44,7 @@ const User = sequelize.define('User', {
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: false
 });
 
 module.exports = User;
