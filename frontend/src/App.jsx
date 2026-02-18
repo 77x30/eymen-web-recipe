@@ -33,6 +33,8 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
 function App() {
   const { notFound, isIdentityDomain, isMainDomain, isSubdomain, loading: workspaceLoading } = useWorkspace();
 
+  console.log('App render - isMainDomain:', isMainDomain, 'isSubdomain:', isSubdomain, 'loading:', workspaceLoading);
+
   // Show loading while checking workspace
   if (workspaceLoading) {
     return (
@@ -71,7 +73,8 @@ function App() {
   }
 
   // Main domain (barida.xyz) - Admin dashboard only, no recipes
-  if (isMainDomain && !isSubdomain) {
+  if (isMainDomain) {
+    console.log('Rendering main domain routes');
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -90,6 +93,7 @@ function App() {
   }
 
   // Subdomain - workspace with recipes
+  console.log('Rendering subdomain routes');
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
