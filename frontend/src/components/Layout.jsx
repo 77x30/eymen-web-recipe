@@ -58,16 +58,6 @@ export default function Layout() {
               >
                 <span className="icon icon-sm">receipt_long</span> Recipes
               </Link>
-              <Link 
-                to="/machine" 
-                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
-                  isActive('/machine')
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <span className="icon icon-sm">precision_manufacturing</span> Machine
-              </Link>
               {user?.role === 'admin' && (
                 <Link 
                   to="/admin" 
