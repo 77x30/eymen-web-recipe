@@ -2,17 +2,68 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
+import QRCode from 'qrcode';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 export default function Dashboard() {
+  const { user, refreshUser } = useAuth();
+  const { workspace } = useWorkspace();
   const [recipes, setRecipes] = useState([]);
   const [stats, setStats] = useState({ totalRecipes: 0, totalRecords: 0, totalElements: 0 });
   const [loading, setLoading] = useState(true);
+  const [showBiometricPanel, setShowBiometricPanel] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
+  const [checkingVerification, setCheckingVerification] = useState(false);
+
+  // Check if user needs biometric verification
+  const needsBiometric = user && !user.biometric_verified && user.role !== 'admin';
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Poll for biometric verification status
+  useEffect(() => {
+    let interval;
+    if (verificationToken && checkingVerification) {
+      interval = setInterval(async () => {
+        try {
+          await api.get(`/auth/verification-status/${verificationToken}`);
+        } catch (err) {
+          // Token no longer valid = verification complete
+          setCheckingVerification(false);
+          setShowBiometricPanel(false);
+          setQrCodeUrl('');
+          refreshUser();
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [verificationToken, checkingVerification, refreshUser]);
+
+  const startBiometricVerification = async () => {
+    try {
+      const response = await api.post('/auth/generate-verification');
+      const { verificationUrl, token } = response.data;
+      
+      const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#1e40af', light: '#ffffff' }
+      });
+      
+      setQrCodeUrl(qrDataUrl);
+      setVerificationToken(token);
+      setShowBiometricPanel(true);
+      setCheckingVerification(true);
+    } catch (error) {
+      console.error('Error generating verification:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -86,6 +137,112 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Biometric Verification Alert Banner */}
+      {needsBiometric && !showBiometricPanel && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="icon icon-lg">face</span>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Biyometrik Doğrulama Gerekli</h3>
+                <p className="text-amber-100 text-sm">Sistemi tam olarak kullanmak için yüz doğrulaması yapmanız gerekmektedir.</p>
+              </div>
+            </div>
+            <button
+              onClick={startBiometricVerification}
+              className="bg-white text-orange-600 px-6 py-2 rounded-lg font-semibold hover:bg-orange-50 transition flex items-center gap-2"
+            >
+              <span className="icon icon-sm">qr_code_scanner</span>
+              Doğrulamayı Başlat
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Biometric QR Panel */}
+      {showBiometricPanel && (
+        <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-500">
+          <div className="flex items-center gap-8">
+            <div className="bg-white p-4 rounded-xl border">
+              {qrCodeUrl && <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48" />}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Biyometrik Doğrulama</h3>
+              <p className="text-gray-600 mb-4">
+                Telefonunuzla QR kodu taratarak yüz doğrulaması yapın. Doğrulama tamamlandığında bu panel otomatik olarak kapanacaktır.
+              </p>
+              <div className="flex items-center gap-4">
+                {checkingVerification && (
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>Doğrulama bekleniyor...</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    setShowBiometricPanel(false);
+                    setCheckingVerification(false);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Daha sonra yap
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Info Card */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+              {user?.username?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">{user?.username}</h2>
+              <div className="flex items-center gap-3 mt-1">
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  user?.role === 'admin' ? 'bg-red-100 text-red-700' :
+                  user?.role === 'sub_admin' ? 'bg-orange-100 text-orange-700' :
+                  user?.role === 'operator' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {user?.role === 'admin' ? 'Admin' :
+                   user?.role === 'sub_admin' ? 'Alt Admin' :
+                   user?.role === 'operator' ? 'Operatör' : 'İzleyici'}
+                </span>
+                {workspace && (
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <span className="icon icon-sm">business</span>
+                    {workspace.name}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {user?.role !== 'admin' && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+                user?.biometric_verified 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                <span className="icon icon-sm">
+                  {user?.biometric_verified ? 'verified_user' : 'pending'}
+                </span>
+                <span className="text-sm font-medium">
+                  {user?.biometric_verified ? 'Doğrulandı' : 'Doğrulama Bekliyor'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>

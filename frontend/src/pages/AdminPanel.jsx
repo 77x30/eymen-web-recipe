@@ -479,48 +479,76 @@ export default function AdminPanel() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      disabled={u.id === user.id || (isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin'))}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                    {u.id === user.id ? (
+                      // Current user - show static role badge
+                      <span className={`px-3 py-1 rounded-lg text-sm font-medium inline-block ${
                         u.role === 'admin' ? 'bg-red-100 text-red-700' :
                         u.role === 'sub_admin' ? 'bg-orange-100 text-orange-700' :
                         u.role === 'operator' ? 'bg-blue-100 text-blue-700' :
                         'bg-gray-100 text-gray-700'
-                      } ${u.id === user.id || (isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin')) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {isSubAdmin ? (
-                        <>
-                          <option value="viewer">Viewer</option>
-                          <option value="operator">Operator</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="viewer">Viewer</option>
-                          <option value="operator">Operator</option>
-                          <option value="sub_admin">Alt Admin</option>
-                          <option value="admin">Admin</option>
-                        </>
-                      )}
-                    </select>
+                      }`}>
+                        {u.role === 'admin' ? 'Admin' :
+                         u.role === 'sub_admin' ? 'Alt Admin' :
+                         u.role === 'operator' ? 'Operator' : 'Viewer'}
+                      </span>
+                    ) : (
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                        disabled={isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin')}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                          u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                          u.role === 'sub_admin' ? 'bg-orange-100 text-orange-700' :
+                          u.role === 'operator' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
+                        } ${isSubAdmin && (u.role === 'admin' || u.role === 'sub_admin') ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {isSubAdmin ? (
+                          <>
+                            <option value="viewer">Viewer</option>
+                            <option value="operator">Operator</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="viewer">Viewer</option>
+                            <option value="operator">Operator</option>
+                            <option value="sub_admin">Alt Admin</option>
+                            <option value="admin">Admin</option>
+                          </>
+                        )}
+                      </select>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={u.workspace_id || ''}
-                      onChange={(e) => handleWorkspaceChange(u.id, e.target.value)}
-                      disabled={u.id === user.id || u.role === 'admin' || isSubAdmin}
-                      className={`px-3 py-1 border rounded-lg text-sm ${
-                        u.id === user.id || u.role === 'admin' || isSubAdmin ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <option value="">Global</option>
-                      {workspaces.map(ws => (
-                        <option key={ws.id} value={ws.id}>{ws.name}</option>
-                      ))}
-                    </select>
-                    {u.workspace && (
-                      <p className="text-xs text-cyan-600 mt-1">{u.workspace.subdomain}.barida.xyz</p>
+                    {u.id === user.id ? (
+                      // Current user - show static workspace info
+                      <div>
+                        <span className="px-3 py-1 border rounded-lg text-sm bg-gray-50">
+                          {u.workspace ? u.workspace.name : 'Global'}
+                        </span>
+                        {u.workspace && (
+                          <p className="text-xs text-cyan-600 mt-1">{u.workspace.subdomain}.barida.xyz</p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          value={u.workspace_id || ''}
+                          onChange={(e) => handleWorkspaceChange(u.id, e.target.value)}
+                          disabled={u.role === 'admin' || isSubAdmin}
+                          className={`px-3 py-1 border rounded-lg text-sm ${
+                            u.role === 'admin' || isSubAdmin ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          <option value="">Global</option>
+                          {workspaces.map(ws => (
+                            <option key={ws.id} value={ws.id}>{ws.name}</option>
+                          ))}
+                        </select>
+                        {u.workspace && (
+                          <p className="text-xs text-cyan-600 mt-1">{u.workspace.subdomain}.barida.xyz</p>
+                        )}
+                      </>
                     )}
                   </td>
                   <td className="px-4 py-3">
