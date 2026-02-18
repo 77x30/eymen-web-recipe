@@ -27,8 +27,17 @@ export const WorkspaceProvider = ({ children }) => {
       // identity.barida.xyz -> identity verification
       const parts = hostname.split('.');
       
+      console.log('Hostname:', hostname, 'Parts:', parts.length);
+      
       // localhost or IP - treat as main domain for development
       if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        setIsMainDomain(true);
+        setLoading(false);
+        return;
+      }
+      
+      // barida.xyz (2 parts) - main domain
+      if (parts.length === 2) {
         setIsMainDomain(true);
         setLoading(false);
         return;
@@ -64,9 +73,6 @@ export const WorkspaceProvider = ({ children }) => {
           }
           console.log('Workspace not found:', subdomain);
         }
-      } else {
-        // barida.xyz (2 parts) - main domain
-        setIsMainDomain(true);
       }
     } catch (error) {
       console.error('Error detecting workspace:', error);
