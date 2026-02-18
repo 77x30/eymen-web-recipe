@@ -270,6 +270,7 @@ export default function AdminPanel() {
 
       {/* User Management Tab */}
       {activeTab === 'users' && (
+      <>
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex justify-between items-center">
           <h2 className="text-white font-semibold flex items-center gap-2">
@@ -442,6 +443,7 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+      </>
       )}
 
       {/* Workspaces Tab */}
