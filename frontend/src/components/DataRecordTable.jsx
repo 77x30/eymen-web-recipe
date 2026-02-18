@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import VirtualKeyboard from './VirtualKeyboard';
 
 export default function DataRecordTable({ elements, record, onSave }) {
   const [values, setValues] = useState({});
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [activeField, setActiveField] = useState(null);
 
   useEffect(() => {
     if (record && record.values) {
@@ -19,11 +22,28 @@ export default function DataRecordTable({ elements, record, onSave }) {
     }
   }, [record, elements]);
 
-  const handleValueChange = (elementId, value) => {
-    setValues(prev => ({
-      ...prev,
-      [elementId]: value
-    }));
+  const handleFieldClick = (element) => {
+    setActiveField(element);
+    setKeyboardOpen(true);
+  };
+
+  const handleKeyboardSubmit = (newValue) => {
+    if (activeField) {
+      setValues(prev => ({
+        ...prev,
+        [activeField.id]: newValue
+      }));
+      
+      // Move to next field
+      const sortedElements = [...elements].sort((a, b) => a.sort_order - b.sort_order);
+      const currentIndex = sortedElements.findIndex(el => el.id === activeField.id);
+      if (currentIndex < sortedElements.length - 1) {
+        setTimeout(() => {
+          setActiveField(sortedElements[currentIndex + 1]);
+          setKeyboardOpen(true);
+        }, 100);
+      }
+    }
   };
 
   const handleSubmit = (e) => {
@@ -35,76 +55,124 @@ export default function DataRecordTable({ elements, record, onSave }) {
     onSave(valueArray);
   };
 
-  const validateValue = (element, value) => {
+  const getStatusColor = (element, value) => {
+    if (!value) return 'bg-gray-100';
     if (element.data_type === 'integer' || element.data_type === 'float') {
       const num = parseFloat(value);
-      if (isNaN(num)) return false;
-      if (element.min_value !== null && num < element.min_value) return false;
-      if (element.max_value !== null && num > element.max_value) return false;
+      if (isNaN(num)) return 'bg-red-100';
+      if (element.min_value !== null && num < parseFloat(element.min_value)) return 'bg-red-100';
+      if (element.max_value !== null && num > parseFloat(element.max_value)) return 'bg-red-100';
     }
-    return true;
+    return 'bg-green-50';
   };
 
+  const sortedElements = [...elements].sort((a, b) => a.sort_order - b.sort_order);
+
   return (
-    <form id="record-form" onSubmit={handleSubmit} className="p-4">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border px-4 py-2 text-left w-1/2">Entry Name</th>
-            <th className="border px-4 py-2 text-left">Value</th>
-            <th className="border px-4 py-2 text-left w-20">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {elements.sort((a, b) => a.sort_order - b.sort_order).map(element => {
+    <>
+      <form id="record-form" onSubmit={handleSubmit} className="bg-gray-900 rounded-lg overflow-hidden">
+        {/* HMI Style Header */}
+        <div className="bg-gradient-to-r from-blue-800 to-blue-900 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"></div>
+            <span className="text-white font-semibold">RECIPE DATA</span>
+          </div>
+          <span className="text-blue-300 text-sm">
+            {sortedElements.length} Parameters
+          </span>
+        </div>
+
+        {/* HMI Style Table */}
+        <div className="divide-y divide-gray-700">
+          {sortedElements.map((element, index) => {
             const value = values[element.id] || '';
-            const isValid = validateValue(element, value);
+            const statusColor = getStatusColor(element, value);
             
             return (
-              <tr key={element.id} className="hover:bg-gray-50">
-                <td className="border px-4 py-2 font-medium text-gray-700">
-                  {element.name}
-                </td>
-                <td className="border px-2 py-1">
-                  {element.data_type === 'boolean' ? (
-                    <select
-                      value={value}
-                      onChange={(e) => handleValueChange(element.id, e.target.value)}
-                      className="w-full px-2 py-1 border rounded"
-                    >
-                      <option value="true">True</option>
-                      <option value="false">False</option>
-                    </select>
-                  ) : (
-                    <input
-                      type={element.data_type === 'integer' || element.data_type === 'float' ? 'number' : 'text'}
-                      step={element.data_type === 'float' ? '0.01' : '1'}
-                      min={element.min_value}
-                      max={element.max_value}
-                      value={value}
-                      onChange={(e) => handleValueChange(element.id, e.target.value)}
-                      className={`w-full px-2 py-1 border rounded text-right ${
-                        !isValid ? 'border-red-500 bg-red-50' : ''
-                      }`}
-                    />
-                  )}
-                </td>
-                <td className="border px-4 py-2 text-gray-500 text-sm">
+              <div 
+                key={element.id} 
+                className={`flex items-center hover:bg-gray-800 transition cursor-pointer ${
+                  index % 2 === 0 ? 'bg-gray-850' : 'bg-gray-900'
+                }`}
+                onClick={() => handleFieldClick(element)}
+              >
+                {/* Row Number */}
+                <div className="w-12 text-center py-4 text-gray-500 font-mono text-sm border-r border-gray-700">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+                
+                {/* Parameter Name */}
+                <div className="flex-1 px-4 py-4">
+                  <div className="text-white font-medium">{element.name}</div>
+                  <div className="text-gray-500 text-xs mt-0.5">
+                    {element.data_type.toUpperCase()}
+                    {element.min_value !== null && element.max_value !== null && 
+                      ` • ${element.min_value} - ${element.max_value}`
+                    }
+                  </div>
+                </div>
+
+                {/* Value Display */}
+                <div className="w-48 px-2 py-2">
+                  <div className={`${statusColor} rounded-lg px-4 py-3 text-right font-mono text-lg font-bold 
+                    border-2 ${activeField?.id === element.id ? 'border-blue-500' : 'border-transparent'}
+                    transition-all hover:border-blue-400`}
+                  >
+                    {value || <span className="text-gray-400">---</span>}
+                  </div>
+                </div>
+
+                {/* Unit */}
+                <div className="w-20 text-center py-4 text-gray-400 font-medium">
                   {element.unit || ''}
-                </td>
-              </tr>
+                </div>
+
+                {/* Status Indicator */}
+                <div className="w-12 text-center py-4">
+                  <div className={`w-3 h-3 rounded-full mx-auto ${
+                    value ? 'bg-green-500' : 'bg-gray-600'
+                  }`}></div>
+                </div>
+              </div>
             );
           })}
           
           {elements.length === 0 && (
-            <tr>
-              <td colSpan="3" className="border px-4 py-8 text-center text-gray-500">
-                No elements defined. Add elements to this recipe.
-              </td>
-            </tr>
+            <div className="px-6 py-12 text-center">
+              <div className="text-gray-500 text-lg">No parameters defined</div>
+              <div className="text-gray-600 text-sm mt-1">Add elements to this recipe</div>
+            </div>
           )}
-        </tbody>
-      </table>
-    </form>
+        </div>
+
+        {/* HMI Footer */}
+        <div className="bg-gray-800 px-4 py-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2 text-green-400">
+              <span className="w-2 h-2 rounded-full bg-green-400"></span>
+              Ready
+            </span>
+            <span className="text-gray-500">|</span>
+            <span className="text-gray-400">Touch value to edit</span>
+          </div>
+          <div className="text-gray-500">
+            {Object.values(values).filter(v => v).length} / {sortedElements.length} filled
+          </div>
+        </div>
+      </form>
+
+      {/* Virtual Keyboard */}
+      <VirtualKeyboard
+        isOpen={keyboardOpen}
+        onClose={() => setKeyboardOpen(false)}
+        onSubmit={handleKeyboardSubmit}
+        dataType={activeField?.data_type || 'string'}
+        currentValue={activeField ? (values[activeField.id] || '') : ''}
+        fieldName={activeField?.name || ''}
+        unit={activeField?.unit || ''}
+        min={activeField?.min_value ? parseFloat(activeField.min_value) : null}
+        max={activeField?.max_value ? parseFloat(activeField.max_value) : null}
+      />
+    </>
   );
 }

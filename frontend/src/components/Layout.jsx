@@ -20,9 +20,11 @@ export default function Layout() {
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-xl">
-                ⚙️
-              </div>
+              <img 
+                src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
+                alt="Barida" 
+                className="h-8"
+              />
               <h1 className="text-xl font-bold">Recipe Management</h1>
             </div>
             <nav className="flex space-x-1">
@@ -46,6 +48,18 @@ export default function Layout() {
               >
                 📋 Recipes
               </Link>
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className={`px-4 py-2 rounded-lg transition ${
+                    isActive('/admin')
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                >
+                  ⚙️ Admin
+                </Link>
+              )}
             </nav>
           </div>
           
@@ -77,7 +91,7 @@ export default function Layout() {
       {/* Footer */}
       <footer className="bg-gray-800 text-gray-400 py-4 mt-8">
         <div className="container mx-auto px-4 text-center text-sm">
-          © 2026 Recipe Management System • Industrial Automation Platform
+          © 2026 Barida Makina • Industrial Solutions
         </div>
       </footer>
     </div>

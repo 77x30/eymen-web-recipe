@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const recipeRoutes = require('./routes/recipes');
 const elementRoutes = require('./routes/elements');
 const recordRoutes = require('./routes/records');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -23,10 +24,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/elements', elementRoutes);
 app.use('/api/records', recordRoutes);
+app.use('/api/admin', adminRoutes);
 
-// Health check
+// Health check with uptime
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime())
+  });
 });
 
 // Error handling middleware
