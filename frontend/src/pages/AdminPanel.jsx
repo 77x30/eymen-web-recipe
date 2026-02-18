@@ -191,6 +191,9 @@ export default function AdminPanel() {
   const isAdmin = user?.role === 'admin';
   const isSubAdmin = user?.role === 'sub_admin';
 
+  // Check if user needs biometric verification
+  const needsBiometric = user && !user.biometric_verified && user.role !== 'admin';
+
   // sub_admin can only see their own workspace
   const availableWorkspaces = isSubAdmin 
     ? workspaces.filter(ws => ws.id === user?.workspace_id)
@@ -210,6 +213,20 @@ export default function AdminPanel() {
   const workspaceUserCount = isSubAdmin 
     ? users.filter(u => u.workspace_id === user?.workspace_id).length
     : 0;
+
+  // Block access if biometric not verified (except admin)
+  if (needsBiometric) {
+    return (
+      <div className="bg-amber-500/20 border border-amber-500 rounded-xl p-8 text-center">
+        <span className="icon icon-xl text-amber-400 mb-4 block">face</span>
+        <h2 className="text-xl font-bold text-amber-400">Biyometrik Doğrulama Gerekli</h2>
+        <p className="text-gray-400 mt-2">Yönetim paneline erişmek için önce biyometrik doğrulamanızı tamamlayın.</p>
+        <a href="/" className="inline-block mt-4 text-blue-400 hover:text-blue-300">
+          Dashboard'a dön →
+        </a>
+      </div>
+    );
+  }
 
   if (!isAdmin && !isSubAdmin) {
     return (

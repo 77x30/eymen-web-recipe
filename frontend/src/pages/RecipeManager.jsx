@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import RecipeEditor from '../components/RecipeEditor';
 import DataRecordTable from '../components/DataRecordTable';
+import { useAuth } from '../context/AuthContext';
 
 export default function RecipeManager() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [records, setRecords] = useState([]);
@@ -14,6 +16,9 @@ export default function RecipeManager() {
   const [status, setStatus] = useState({ type: 'info', message: 'Ready' });
   const [showRecipeEditor, setShowRecipeEditor] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Check if user needs biometric verification (view only mode)
+  const isViewOnly = user && !user.biometric_verified && user.role !== 'admin';
 
   useEffect(() => {
     fetchRecipes();
@@ -175,13 +180,26 @@ export default function RecipeManager() {
             <p className="text-blue-200 text-sm">Industrial Recipe System</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowRecipeEditor(true)}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition flex items-center gap-2"
-        >
-          <span className="icon icon-sm">add</span> New Recipe
-        </button>
+        {!isViewOnly && (
+          <button
+            onClick={() => setShowRecipeEditor(true)}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition flex items-center gap-2"
+          >
+            <span className="icon icon-sm">add</span> New Recipe
+          </button>
+        )}
       </div>
+
+      {/* View Only Warning Banner */}
+      {isViewOnly && (
+        <div className="bg-amber-500/20 border-b border-amber-500/50 px-6 py-3 flex items-center gap-3">
+          <span className="icon text-amber-400">warning</span>
+          <span className="text-amber-200 text-sm">
+            Biyometrik doğrulamanızı tamamlayana kadar sadece reçeteleri görüntüleyebilirsiniz. 
+            Dashboard'dan doğrulama işlemini başlatabilirsiniz.
+          </span>
+        </div>
+      )}
 
       {/* Recipe & Record Selection - HMI Style */}
       <div className="p-4 bg-gray-800 border-b border-gray-700">
@@ -257,28 +275,49 @@ export default function RecipeManager() {
           </button>
           <button
             onClick={() => {
+              if (isViewOnly) return;
               const form = document.getElementById('record-form');
               if (form) form.requestSubmit();
             }}
-            className="flex-1 min-w-32 py-4 bg-gradient-to-b from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-green-500 flex items-center justify-center gap-2"
+            disabled={isViewOnly}
+            className={`flex-1 min-w-32 py-4 rounded-lg font-bold text-lg shadow-lg transition border-2 flex items-center justify-center gap-2 ${
+              isViewOnly 
+                ? 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed' 
+                : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white border-green-500'
+            }`}
           >
             <span className="icon">save</span> SAVE
           </button>
           <button
-            onClick={handleNewRecord}
-            className="flex-1 min-w-32 py-4 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-blue-500 flex items-center justify-center gap-2"
+            onClick={isViewOnly ? undefined : handleNewRecord}
+            disabled={isViewOnly}
+            className={`flex-1 min-w-32 py-4 rounded-lg font-bold text-lg shadow-lg transition border-2 flex items-center justify-center gap-2 ${
+              isViewOnly 
+                ? 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed' 
+                : 'bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white border-blue-500'
+            }`}
           >
             <span className="icon">add</span> NEW
           </button>
           <button
-            onClick={handleDeleteRecord}
-            className="flex-1 min-w-32 py-4 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-red-500 flex items-center justify-center gap-2"
+            onClick={isViewOnly ? undefined : handleDeleteRecord}
+            disabled={isViewOnly}
+            className={`flex-1 min-w-32 py-4 rounded-lg font-bold text-lg shadow-lg transition border-2 flex items-center justify-center gap-2 ${
+              isViewOnly 
+                ? 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed' 
+                : 'bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white border-red-500'
+            }`}
           >
             <span className="icon">delete</span> DELETE
           </button>
           <button
-            onClick={handleExport}
-            className="flex-1 min-w-32 py-4 bg-gradient-to-b from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-purple-500 flex items-center justify-center gap-2"
+            onClick={isViewOnly ? undefined : handleExport}
+            disabled={isViewOnly}
+            className={`flex-1 min-w-32 py-4 rounded-lg font-bold text-lg shadow-lg transition border-2 flex items-center justify-center gap-2 ${
+              isViewOnly 
+                ? 'bg-gray-700 text-gray-500 border-gray-600 cursor-not-allowed' 
+                : 'bg-gradient-to-b from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white border-purple-500'
+            }`}
           >
             <span className="icon">download</span> EXPORT
           </button>

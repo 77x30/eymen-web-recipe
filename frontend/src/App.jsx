@@ -44,7 +44,17 @@ function App() {
     return (
       <Routes>
         <Route path="/verify/:token" element={<BiometricVerification />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={
+          <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+            <div className="text-center text-white">
+              <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="icon text-5xl text-blue-400">qr_code_2</span>
+              </div>
+              <h1 className="text-2xl font-bold mb-2">Barida Identity</h1>
+              <p className="text-gray-400">Biyometrik doğrulama için QR kodu taratın</p>
+            </div>
+          </div>
+        } />
       </Routes>
     );
   }
