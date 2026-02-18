@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import QRCode from 'qrcode';
@@ -14,9 +14,36 @@ export default function Login() {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [verificationToken, setVerificationToken] = useState('');
   const [checkingVerification, setCheckingVerification] = useState(false);
-  const { login } = useAuth();
+  const { login, setUserFromToken } = useAuth();
   const { workspace, isSubdomain } = useWorkspace();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Check for token in URL (redirect from main domain)
+  useEffect(() => {
+    const tokenFromUrl = searchParams.get('token');
+    const userFromUrl = searchParams.get('user');
+    
+    if (tokenFromUrl && userFromUrl) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userFromUrl));
+        // Set token and user in localStorage
+        localStorage.setItem('token', tokenFromUrl);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Update auth context
+        if (setUserFromToken) {
+          setUserFromToken(tokenFromUrl, userData);
+        }
+        
+        // Clear URL params and navigate to home
+        window.history.replaceState({}, document.title, '/');
+        navigate('/');
+      } catch (e) {
+        console.error('Error parsing redirect data:', e);
+      }
+    }
+  }, [searchParams, navigate, setUserFromToken]);
 
   // Check verification status periodically
   useEffect(() => {
@@ -61,14 +88,14 @@ export default function Login() {
       
       // If user needs to be redirected to their workspace
       if (result.redirectToWorkspace) {
-        // Redirect to workspace subdomain with token
+        // Clear local storage before redirect (different subdomain)
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        
+        // Redirect to workspace subdomain with token in URL
         const protocol = window.location.protocol;
         const port = window.location.port ? `:${window.location.port}` : '';
-        const workspaceUrl = `${protocol}//${result.redirectToWorkspace}.barida.xyz${port}/`;
-        
-        // Store token for the redirect
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('user', JSON.stringify(result.user));
+        const workspaceUrl = `${protocol}//${result.redirectToWorkspace}.barida.xyz${port}/login?token=${encodeURIComponent(result.token)}&user=${encodeURIComponent(JSON.stringify(result.user))}`;
         
         // Redirect to workspace
         window.location.href = workspaceUrl;

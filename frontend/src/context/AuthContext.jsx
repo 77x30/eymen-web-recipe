@@ -34,6 +34,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Set user from URL token (for cross-subdomain redirect)
+  const setUserFromToken = (token, userData) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  };
+
   const refreshUser = async () => {
     try {
       const response = await api.get('/auth/me');
@@ -47,7 +54,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, refreshUser, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, setUserFromToken, loading }}>
       {children}
     </AuthContext.Provider>
   );
