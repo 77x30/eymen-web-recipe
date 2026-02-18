@@ -198,9 +198,10 @@ async function seedDatabase() {
 }
 
 // Database sync and server start
-sequelize.sync({ alter: false })
+// Skip sync to avoid index duplication issues - tables should already exist
+sequelize.authenticate()
   .then(async () => {
-    console.log('Database synchronized');
+    console.log('Database connection established');
     await seedDatabase();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
