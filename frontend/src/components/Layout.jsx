@@ -30,34 +30,34 @@ export default function Layout() {
             <nav className="flex space-x-1">
               <Link 
                 to="/" 
-                className={`px-4 py-2 rounded-lg transition ${
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
                   isActive('/') 
                     ? 'bg-blue-600 text-white' 
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
               >
-                📊 Dashboard
+                <span className="icon icon-sm">dashboard</span> Dashboard
               </Link>
               <Link 
                 to="/recipes" 
-                className={`px-4 py-2 rounded-lg transition ${
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
                   location.pathname.startsWith('/recipes')
                     ? 'bg-blue-600 text-white' 
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
               >
-                📋 Recipes
+                <span className="icon icon-sm">receipt_long</span> Recipes
               </Link>
               {user?.role === 'admin' && (
                 <Link 
                   to="/admin" 
-                  className={`px-4 py-2 rounded-lg transition ${
+                  className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
                     isActive('/admin')
                       ? 'bg-blue-600 text-white' 
                       : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                   }`}
                 >
-                  ⚙️ Admin
+                  <span className="icon icon-sm">admin_panel_settings</span> Admin
                 </Link>
               )}
             </nav>
@@ -75,9 +75,9 @@ export default function Layout() {
             </div>
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
+              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
             >
-              🚪 Logout
+              <span className="icon icon-sm">logout</span> Logout
             </button>
           </div>
         </div>

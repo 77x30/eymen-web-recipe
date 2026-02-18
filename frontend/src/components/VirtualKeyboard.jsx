@@ -159,21 +159,21 @@ export default function VirtualKeyboard({
               ))}
               <button
                 onClick={() => handleKeyPress('backspace')}
-                className="bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg"
+                className="bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg flex items-center justify-center"
               >
-                ⌫
+                <span className="icon">backspace</span>
               </button>
               <button
                 onClick={() => handleKeyPress('clear')}
-                className="bg-red-600 hover:bg-red-500 active:bg-red-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg"
+                className="bg-red-600 hover:bg-red-500 active:bg-red-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg flex items-center justify-center"
               >
-                CLR
+                <span className="icon">clear</span>
               </button>
               <button
                 onClick={() => handleKeyPress('enter')}
-                className="col-span-2 bg-green-600 hover:bg-green-500 active:bg-green-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg"
+                className="col-span-2 bg-green-600 hover:bg-green-500 active:bg-green-400 text-white text-xl font-bold py-5 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
               >
-                ENTER ↵
+                <span className="icon">keyboard_return</span> ENTER
               </button>
             </div>
           ) : (
@@ -195,27 +195,27 @@ export default function VirtualKeyboard({
               <div className="flex justify-center gap-2 mt-2">
                 <button
                   onClick={() => handleKeyPress(' ')}
-                  className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold px-20 py-3 rounded-lg transition shadow-lg"
+                  className="bg-gray-700 hover:bg-gray-600 text-white text-lg font-bold px-20 py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"
                 >
-                  SPACE
+                  <span className="icon icon-sm">space_bar</span> SPACE
                 </button>
                 <button
                   onClick={() => handleKeyPress('backspace')}
-                  className="bg-yellow-600 hover:bg-yellow-500 text-white text-lg font-bold px-6 py-3 rounded-lg transition shadow-lg"
+                  className="bg-yellow-600 hover:bg-yellow-500 text-white text-lg font-bold px-6 py-3 rounded-lg transition shadow-lg flex items-center justify-center"
                 >
-                  ⌫
+                  <span className="icon">backspace</span>
                 </button>
                 <button
                   onClick={() => handleKeyPress('clear')}
-                  className="bg-red-600 hover:bg-red-500 text-white text-lg font-bold px-6 py-3 rounded-lg transition shadow-lg"
+                  className="bg-red-600 hover:bg-red-500 text-white text-lg font-bold px-6 py-3 rounded-lg transition shadow-lg flex items-center justify-center"
                 >
-                  CLR
+                  <span className="icon">clear</span>
                 </button>
                 <button
                   onClick={() => handleKeyPress('enter')}
-                  className="bg-green-600 hover:bg-green-500 text-white text-lg font-bold px-8 py-3 rounded-lg transition shadow-lg"
+                  className="bg-green-600 hover:bg-green-500 text-white text-lg font-bold px-8 py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"
                 >
-                  ENTER ↵
+                  <span className="icon">keyboard_return</span> ENTER
                 </button>
               </div>
             </div>

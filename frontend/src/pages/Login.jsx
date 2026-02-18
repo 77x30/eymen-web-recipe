@@ -21,7 +21,7 @@ export default function Login() {
     try {
       if (isRegister) {
         await register(username, password, 'operator');
-        setSuccess('✅ Registration successful! You can now login.');
+        setSuccess('Registration successful! You can now login.');
         setIsRegister(false);
         setPassword('');
       } else {
@@ -89,7 +89,7 @@ export default function Login() {
                 Username
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">👤</span>
+                <span className="icon icon-sm absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">person</span>
                 <input
                   type="text"
                   value={username}
@@ -106,7 +106,7 @@ export default function Login() {
                 Password
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔒</span>
+                <span className="icon icon-sm absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">lock</span>
                 <input
                   type="password"
                   value={password}
@@ -120,13 +120,13 @@ export default function Login() {
             
             {error && (
               <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm flex items-center gap-2">
-                <span>❌</span> {error}
+                <span className="icon icon-sm">error</span> {error}
               </div>
             )}
 
             {success && (
               <div className="mb-4 p-3 bg-green-500/20 border border-green-500 rounded-lg text-green-400 text-sm flex items-center gap-2">
-                <span>✅</span> {success}
+                <span className="icon icon-sm">check_circle</span> {success}
               </div>
             )}
             

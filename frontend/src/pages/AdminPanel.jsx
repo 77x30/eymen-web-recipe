@@ -93,7 +93,7 @@ export default function AdminPanel() {
   if (user?.role !== 'admin') {
     return (
       <div className="bg-red-500/20 border border-red-500 rounded-xl p-8 text-center">
-        <div className="text-6xl mb-4">🚫</div>
+        <span className="icon icon-xl text-red-400 mb-4 block">block</span>
         <h2 className="text-xl font-bold text-red-400">Access Denied</h2>
         <p className="text-gray-400 mt-2">Admin privileges required</p>
       </div>
@@ -124,9 +124,9 @@ export default function AdminPanel() {
               <p className="text-green-100 text-sm">API Status</p>
               <p className="text-2xl font-bold uppercase">{systemStatus?.status || 'Unknown'}</p>
             </div>
-            <div className={`text-4xl ${systemStatus?.status === 'online' ? 'animate-pulse' : ''}`}>
-              {systemStatus?.status === 'online' ? '🟢' : '🔴'}
-            </div>
+            <span className={`icon icon-lg ${systemStatus?.status === 'online' ? 'animate-pulse' : ''}`}>
+              {systemStatus?.status === 'online' ? 'check_circle' : 'cancel'}
+            </span>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export default function AdminPanel() {
               <p className="text-blue-100 text-sm">API Latency</p>
               <p className="text-2xl font-bold">{systemStatus?.latency || 0} ms</p>
             </div>
-            <div className="text-4xl">⚡</div>
+            <span className="icon icon-lg">bolt</span>
           </div>
         </div>
 
@@ -146,7 +146,7 @@ export default function AdminPanel() {
               <p className="text-purple-100 text-sm">Total Users</p>
               <p className="text-2xl font-bold">{users.length}</p>
             </div>
-            <div className="text-4xl">👥</div>
+            <span className="icon icon-lg">group</span>
           </div>
         </div>
 
@@ -160,7 +160,7 @@ export default function AdminPanel() {
                   : 'N/A'}
               </p>
             </div>
-            <div className="text-4xl">🕐</div>
+            <span className="icon icon-lg">schedule</span>
           </div>
         </div>
       </div>
@@ -168,13 +168,13 @@ export default function AdminPanel() {
       {/* Notifications */}
       {error && (
         <div className="p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-400 flex items-center gap-2">
-          ❌ {error}
+          <span className="icon icon-sm">error</span> {error}
           <button onClick={() => setError('')} className="ml-auto">×</button>
         </div>
       )}
       {success && (
         <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-400 flex items-center gap-2">
-          ✅ {success}
+          <span className="icon icon-sm">check_circle</span> {success}
           <button onClick={() => setSuccess('')} className="ml-auto">×</button>
         </div>
       )}
@@ -183,13 +183,13 @@ export default function AdminPanel() {
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-6 py-4 flex justify-between items-center">
           <h2 className="text-white font-semibold flex items-center gap-2">
-            👥 User Management
+            <span className="icon icon-sm">group</span> User Management
           </h2>
           <button
             onClick={() => setShowAddUser(!showAddUser)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
           >
-            ➕ Add User
+            <span className="icon icon-sm">person_add</span> Add User
           </button>
         </div>
 
@@ -295,9 +295,9 @@ export default function AdminPanel() {
                   {u.id !== user.id && (
                     <button
                       onClick={() => handleDeleteUser(u.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                      className="text-red-500 hover:text-red-700 text-sm font-medium flex items-center gap-1"
                     >
-                      🗑️ Delete
+                      <span className="icon icon-sm">delete</span> Delete
                     </button>
                   )}
                 </td>
@@ -322,10 +322,10 @@ export default function AdminPanel() {
               <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-sm font-medium">Viewer</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>✅ View recipes</li>
-              <li>✅ View data records</li>
-              <li>❌ Create/Edit recipes</li>
-              <li>❌ Admin panel</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View recipes</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View data records</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Create/Edit recipes</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Admin panel</li>
             </ul>
           </div>
           <div className="p-4 bg-blue-50 rounded-lg">
@@ -333,10 +333,10 @@ export default function AdminPanel() {
               <span className="bg-blue-200 text-blue-700 px-2 py-0.5 rounded text-sm font-medium">Operator</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>✅ View recipes</li>
-              <li>✅ Create/Edit recipes</li>
-              <li>✅ Manage data records</li>
-              <li>❌ Admin panel</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> View recipes</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Create/Edit recipes</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Manage data records</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-red-500">cancel</span> Admin panel</li>
             </ul>
           </div>
           <div className="p-4 bg-red-50 rounded-lg">
@@ -344,10 +344,10 @@ export default function AdminPanel() {
               <span className="bg-red-200 text-red-700 px-2 py-0.5 rounded text-sm font-medium">Admin</span>
             </div>
             <ul className="text-sm text-gray-600 space-y-1">
-              <li>✅ Full recipe access</li>
-              <li>✅ User management</li>
-              <li>✅ System monitoring</li>
-              <li>✅ All permissions</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> Full recipe access</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> User management</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> System monitoring</li>
+              <li className="flex items-center gap-1"><span className="icon icon-sm text-green-500">check_circle</span> All permissions</li>
             </ul>
           </div>
         </div>

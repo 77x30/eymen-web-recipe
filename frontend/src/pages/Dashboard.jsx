@@ -93,7 +93,7 @@ export default function Dashboard() {
           to="/recipes"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
         >
-          <span>➕</span> New Recipe
+          <span className="icon icon-sm">add</span> New Recipe
         </Link>
       </div>
 
@@ -105,7 +105,7 @@ export default function Dashboard() {
               <p className="text-blue-100 text-sm">Total Recipes</p>
               <p className="text-3xl font-bold">{stats.totalRecipes}</p>
             </div>
-            <div className="text-4xl opacity-80">📋</div>
+            <span className="icon icon-lg opacity-80">description</span>
           </div>
         </div>
         
@@ -115,7 +115,7 @@ export default function Dashboard() {
               <p className="text-green-100 text-sm">Data Records</p>
               <p className="text-3xl font-bold">{stats.totalRecords}</p>
             </div>
-            <div className="text-4xl opacity-80">📊</div>
+            <span className="icon icon-lg opacity-80">analytics</span>
           </div>
         </div>
         
@@ -125,7 +125,7 @@ export default function Dashboard() {
               <p className="text-purple-100 text-sm">Total Elements</p>
               <p className="text-3xl font-bold">{stats.totalElements}</p>
             </div>
-            <div className="text-4xl opacity-80">⚙️</div>
+            <span className="icon icon-lg opacity-80">settings</span>
           </div>
         </div>
         
@@ -135,7 +135,7 @@ export default function Dashboard() {
               <p className="text-orange-100 text-sm">Avg Efficiency</p>
               <p className="text-3xl font-bold">92%</p>
             </div>
-            <div className="text-4xl opacity-80">📈</div>
+            <span className="icon icon-lg opacity-80">trending_up</span>
           </div>
         </div>
       </div>
@@ -270,10 +270,10 @@ export default function Dashboard() {
                 </p>
                 <div className="mt-4 flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1 text-gray-600">
-                    <span className="text-blue-500">⚙️</span> {recipe.elements?.length || 0} elements
+                    <span className="icon icon-sm text-blue-500">settings</span> {recipe.elements?.length || 0} elements
                   </span>
                   <span className="flex items-center gap-1 text-gray-600">
-                    <span className="text-green-500">📊</span> {recipe.recordCount || 0} records
+                    <span className="icon icon-sm text-green-500">analytics</span> {recipe.recordCount || 0} records
                   </span>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function Dashboard() {
 
           {recipes.length === 0 && (
             <div className="col-span-full bg-white rounded-xl shadow-lg p-12 text-center">
-              <div className="text-6xl mb-4">📋</div>
+              <span className="icon icon-xl text-gray-400 mb-4 block">description</span>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No Recipes Yet</h3>
               <p className="text-gray-500 mb-4">Create your first recipe to get started!</p>
               <Link

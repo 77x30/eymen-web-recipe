@@ -62,7 +62,7 @@ export default function RecipeManager() {
     try {
       const response = await api.get(`/records/${recordId}`);
       setSelectedRecord(response.data);
-      setStatus({ type: 'success', message: '📖 Data record read successfully' });
+      setStatus({ type: 'success', message: 'Data record read successfully' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Error loading record' });
     }
@@ -75,7 +75,7 @@ export default function RecipeManager() {
           name: selectedRecord.name,
           values
         });
-        setStatus({ type: 'success', message: '💾 Data record saved successfully' });
+        setStatus({ type: 'success', message: 'Data record saved successfully' });
         handleRecordChange(selectedRecord.id);
       }
     } catch (error) {
@@ -102,7 +102,7 @@ export default function RecipeManager() {
       
       setRecords([...records, response.data]);
       setSelectedRecord(response.data);
-      setStatus({ type: 'success', message: '➕ New record created' });
+      setStatus({ type: 'success', message: 'New record created' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Error creating record' });
     }
@@ -117,7 +117,7 @@ export default function RecipeManager() {
       const newRecords = records.filter(r => r.id !== selectedRecord.id);
       setRecords(newRecords);
       setSelectedRecord(newRecords[0] || null);
-      setStatus({ type: 'success', message: '🗑 Record deleted' });
+      setStatus({ type: 'success', message: 'Record deleted' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Error deleting record' });
     }
@@ -138,7 +138,7 @@ export default function RecipeManager() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setStatus({ type: 'success', message: '📤 Recipe exported' });
+      setStatus({ type: 'success', message: 'Recipe exported' });
     } catch (error) {
       setStatus({ type: 'error', message: 'Error exporting recipe' });
     }
@@ -164,7 +164,7 @@ export default function RecipeManager() {
       <div className="bg-gradient-to-r from-blue-800 via-blue-700 to-blue-800 px-6 py-4 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-2xl">📋</span>
+            <span className="icon icon-lg text-white">receipt_long</span>
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Recipe Manager</h1>
@@ -175,7 +175,7 @@ export default function RecipeManager() {
           onClick={() => setShowRecipeEditor(true)}
           className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition flex items-center gap-2"
         >
-          <span className="text-lg">+</span> New Recipe
+          <span className="icon icon-sm">add</span> New Recipe
         </button>
       </div>
 
@@ -184,7 +184,9 @@ export default function RecipeManager() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Recipe Selection */}
           <div className="bg-gray-750 rounded-lg p-4 border border-gray-600">
-            <label className="block text-blue-400 text-sm font-medium mb-2">📁 RECIPE</label>
+            <label className="block text-blue-400 text-sm font-medium mb-2 flex items-center gap-1">
+              <span className="icon icon-sm">folder</span> RECIPE
+            </label>
             <div className="flex gap-2">
               <select
                 value={selectedRecipe?.id || ''}
@@ -204,7 +206,9 @@ export default function RecipeManager() {
           
           {/* Data Record Selection */}
           <div className="bg-gray-750 rounded-lg p-4 border border-gray-600">
-            <label className="block text-green-400 text-sm font-medium mb-2">📄 DATA RECORD</label>
+            <label className="block text-green-400 text-sm font-medium mb-2 flex items-center gap-1">
+              <span className="icon icon-sm">description</span> DATA RECORD
+            </label>
             <div className="flex gap-2">
               <select
                 value={selectedRecord?.id || ''}
@@ -245,7 +249,7 @@ export default function RecipeManager() {
             onClick={() => selectedRecord && handleRecordChange(selectedRecord.id)}
             className="flex-1 min-w-32 py-4 bg-gradient-to-b from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-gray-500 flex items-center justify-center gap-2"
           >
-            📖 READ
+            <span className="icon">menu_book</span> READ
           </button>
           <button
             onClick={() => {
@@ -254,25 +258,25 @@ export default function RecipeManager() {
             }}
             className="flex-1 min-w-32 py-4 bg-gradient-to-b from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-green-500 flex items-center justify-center gap-2"
           >
-            💾 SAVE
+            <span className="icon">save</span> SAVE
           </button>
           <button
             onClick={handleNewRecord}
             className="flex-1 min-w-32 py-4 bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-blue-500 flex items-center justify-center gap-2"
           >
-            ➕ NEW
+            <span className="icon">add</span> NEW
           </button>
           <button
             onClick={handleDeleteRecord}
             className="flex-1 min-w-32 py-4 bg-gradient-to-b from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-red-500 flex items-center justify-center gap-2"
           >
-            🗑 DELETE
+            <span className="icon">delete</span> DELETE
           </button>
           <button
             onClick={handleExport}
             className="flex-1 min-w-32 py-4 bg-gradient-to-b from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg font-bold text-lg shadow-lg transition border-2 border-purple-500 flex items-center justify-center gap-2"
           >
-            📤 EXPORT
+            <span className="icon">download</span> EXPORT
           </button>
         </div>
       </div>

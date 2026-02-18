@@ -4,7 +4,8 @@ const path = require('path');
 // Keep a global reference of the window object
 let mainWindow;
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+// Production URL - barida.xyz
+const PRODUCTION_URL = 'https://barida.xyz';
 
 function createWindow() {
   // Create the browser window
@@ -24,15 +25,8 @@ function createWindow() {
     title: 'Barida Recipe Management System'
   });
 
-  // Load the app
-  if (isDev) {
-    // Development: load from Vite dev server
-    mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
-  } else {
-    // Production: load built files
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
-  }
+  // Always load production URL
+  mainWindow.loadURL(PRODUCTION_URL);
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
@@ -80,14 +74,6 @@ function createWindow() {
     }
   ];
 
-  // Add DevTools in development
-  if (isDev) {
-    menuTemplate[0].submenu.unshift(
-      { role: 'toggleDevTools' },
-      { type: 'separator' }
-    );
-  }
-
   const menu = Menu.buildFromTemplate(menuTemplate);
   Menu.setApplicationMenu(menu);
 
@@ -113,12 +99,7 @@ app.on('activate', () => {
   }
 });
 
-// Handle certificate errors for development
+// Handle certificate errors
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-  if (isDev) {
-    event.preventDefault();
-    callback(true);
-  } else {
-    callback(false);
-  }
+  callback(false);
 });
