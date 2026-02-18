@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 
 const APP_VERSION = '1.0.0';
 const CREATOR = 'Eymen Gözel';
@@ -8,6 +9,7 @@ const CREATOR_TITLE = 'Otomasyon ve Yazılım Sorumlusu';
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { workspace, isSubdomain } = useWorkspace();
   const navigate = useNavigate();
   const location = useLocation();
   const [showInfo, setShowInfo] = useState(false);
@@ -29,11 +31,13 @@ export default function Layout() {
               {/* White Barida Logo Text */}
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white font-black text-xl shadow-lg">
-                  B
+                  {isSubdomain ? workspace?.name?.charAt(0) || 'W' : 'B'}
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold leading-tight">BARIDA</h1>
-                  <p className="text-[10px] text-blue-300 leading-tight">Recipe Management</p>
+                  <h1 className="text-lg font-bold leading-tight">{isSubdomain ? workspace?.name : 'BARIDA'}</h1>
+                  <p className="text-[10px] text-blue-300 leading-tight">
+                    {isSubdomain ? workspace?.company || 'Workspace' : 'Recipe Management'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -42,7 +46,7 @@ export default function Layout() {
                 to="/" 
                 className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
                   isActive('/') 
-                    ? 'bg-blue-600 text-white' 
+                    ? 'bg-blue-600 text-white'
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
               >
