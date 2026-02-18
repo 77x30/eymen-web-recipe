@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { Workspace, User, Recipe } = require('../models');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 
 // Get all workspaces (admin only)
-router.get('/', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const workspaces = await Workspace.findAll({
       include: [{ model: User, as: 'creator', attributes: ['id', 'username'] }],
@@ -34,7 +34,7 @@ router.get('/subdomain/:subdomain', async (req, res) => {
 });
 
 // Get single workspace
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const workspace = await Workspace.findByPk(req.params.id, {
       include: [{ model: User, as: 'creator', attributes: ['id', 'username'] }]
@@ -51,7 +51,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create workspace (admin only)
-router.post('/', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { name, subdomain, description, company, location, settings } = req.body;
     
@@ -78,7 +78,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Update workspace (admin only)
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const workspace = await Workspace.findByPk(req.params.id);
     
@@ -104,7 +104,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Delete workspace (admin only)
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     const workspace = await Workspace.findByPk(req.params.id);
     
@@ -120,7 +120,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Test workspace connection (admin only)
-router.post('/:id/test', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/:id/test', authenticate, authorize('admin'), async (req, res) => {
   try {
     const workspace = await Workspace.findByPk(req.params.id);
     
