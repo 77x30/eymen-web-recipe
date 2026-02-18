@@ -59,6 +59,22 @@ export default function Login() {
 
       const result = await login(username, password, subdomain);
       
+      // If user needs to be redirected to their workspace
+      if (result.redirectToWorkspace) {
+        // Redirect to workspace subdomain with token
+        const protocol = window.location.protocol;
+        const port = window.location.port ? `:${window.location.port}` : '';
+        const workspaceUrl = `${protocol}//${result.redirectToWorkspace}.barida.xyz${port}/`;
+        
+        // Store token for the redirect
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        
+        // Redirect to workspace
+        window.location.href = workspaceUrl;
+        return;
+      }
+      
       // Check if biometric verification is required
       if (result.requiresBiometric) {
         // Generate QR code for verification
@@ -193,7 +209,7 @@ export default function Login() {
 
           {!isSubdomain && (
             <p className="mt-4 text-center text-gray-500 text-xs">
-              Operatör girişi için workspace subdomain adresinizi kullanın
+              Operatörler giriş yaptığında kendi workspace adreslerine yönlendirilir
             </p>
           )}
         </div>

@@ -21,14 +21,16 @@ namespace BaridaRecipeManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(30, 58, 138);
-            this.ClientSize = new System.Drawing.Size(1600, 900);
-            this.MinimumSize = new System.Drawing.Size(1024, 768);
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(58)))), ((int)(((byte)(138)))));
+            this.ClientSize = new System.Drawing.Size(1370, 749);
+            this.MinimumSize = new System.Drawing.Size(1024, 726);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Barida Recipe Management System";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
+
         }
     }
 }

@@ -178,5 +178,10 @@ namespace BaridaRecipeManager
             webView?.Dispose();
             base.OnFormClosing(e);
         }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }

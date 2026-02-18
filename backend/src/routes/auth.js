@@ -41,9 +41,21 @@ router.post('/login', async (req, res) => {
       }
     }
 
-    // If user is not admin and trying to login from main domain, deny
+    // If user is not admin and trying to login from main domain, redirect to their workspace
+    let redirectToWorkspace = null;
     if (!subdomain && user.role !== 'admin') {
-      return res.status(403).json({ error: 'Please login from your workspace subdomain' });
+      // User must have a workspace assigned
+      if (!user.workspace_id) {
+        return res.status(403).json({ error: 'No workspace assigned. Please contact admin.' });
+      }
+      
+      // Get user's workspace subdomain for redirect
+      const userWorkspace = await Workspace.findByPk(user.workspace_id);
+      if (!userWorkspace) {
+        return res.status(403).json({ error: 'Workspace not found. Please contact admin.' });
+      }
+      
+      redirectToWorkspace = userWorkspace.subdomain;
     }
 
     // Check if first login and biometric verification required
@@ -71,7 +83,8 @@ router.post('/login', async (req, res) => {
         biometric_verified: user.biometric_verified,
         first_login: user.first_login
       },
-      requiresBiometric
+      requiresBiometric,
+      redirectToWorkspace
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

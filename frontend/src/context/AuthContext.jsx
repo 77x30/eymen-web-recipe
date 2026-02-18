@@ -19,13 +19,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password, subdomain = null) => {
     const response = await api.post('/auth/login', { username, password, subdomain });
-    const { token, user, requiresBiometric } = response.data;
+    const { token, user, requiresBiometric, redirectToWorkspace } = response.data;
     
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
     
-    return { user, requiresBiometric };
+    return { user, requiresBiometric, redirectToWorkspace, token };
   };
 
   const logout = () => {
