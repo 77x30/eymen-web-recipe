@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import VirtualKeyboard from './VirtualKeyboard';
 
 export default function ModernDataTable({ elements, record, onSave, readOnly = false }) {
   const [values, setValues] = useState({});
-  const [editingField, setEditingField] = useState(null);
-  const [editValue, setEditValue] = useState('');
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardElement, setKeyboardElement] = useState(null);
 
   useEffect(() => {
     if (record && record.values) {
@@ -23,32 +24,22 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
 
   const handleStartEdit = (element) => {
     if (readOnly) return;
-    setEditingField(element);
-    setEditValue(values[element.id] || '');
+    setKeyboardElement(element);
+    setKeyboardOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editingField) {
+  const handleKeyboardSubmit = (newValue) => {
+    if (keyboardElement) {
       setValues(prev => ({
         ...prev,
-        [editingField.id]: editValue
+        [keyboardElement.id]: newValue
       }));
-      setEditingField(null);
-      setEditValue('');
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditingField(null);
-    setEditValue('');
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleSaveEdit();
-    } else if (e.key === 'Escape') {
-      handleCancelEdit();
-    }
+  const handleCloseKeyboard = () => {
+    setKeyboardOpen(false);
+    setKeyboardElement(null);
   };
 
   const handleSubmit = (e) => {
@@ -75,7 +66,8 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
   const sortedElements = [...elements].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <form id="record-form" onSubmit={handleSubmit}>
+    <>
+      <form id="record-form" onSubmit={handleSubmit}>
       {/* Modern Table */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Table Header */}
@@ -107,15 +99,14 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
           {sortedElements.map((element, index) => {
             const value = values[element.id] || '';
             const status = getValidationStatus(element, value);
-            const isEditing = editingField?.id === element.id;
 
             return (
               <div 
                 key={element.id} 
-                className={`flex items-center px-6 py-4 transition ${
-                  !readOnly ? 'hover:bg-gray-50 cursor-pointer' : ''
-                } ${isEditing ? 'bg-blue-50' : ''}`}
-                onClick={() => !isEditing && handleStartEdit(element)}
+                className={`flex items-center px-6 py-4 transition group ${
+                  !readOnly ? 'hover:bg-blue-50 cursor-pointer' : ''
+                }`}
+                onClick={() => handleStartEdit(element)}
               >
                 {/* Index */}
                 <div className="w-10 text-center">
@@ -133,7 +124,14 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
                     )}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-gray-400 capitalize">{element.data_type}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      element.data_type === 'integer' ? 'bg-blue-100 text-blue-600' :
+                      element.data_type === 'float' ? 'bg-green-100 text-green-600' :
+                      'bg-purple-100 text-purple-600'
+                    }`}>
+                      {element.data_type === 'integer' ? 'Tam Sayı' : 
+                       element.data_type === 'float' ? 'Ondalık' : 'Metin'}
+                    </span>
                     {element.min_value !== null && element.max_value !== null && (
                       <span className="text-xs text-gray-400">
                         Aralık: {element.min_value} - {element.max_value}
@@ -143,46 +141,18 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
                 </div>
 
                 {/* Value */}
-                <div className="w-48">
-                  {isEditing ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type={element.data_type === 'integer' || element.data_type === 'float' ? 'number' : 'text'}
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                        step={element.data_type === 'float' ? '0.01' : '1'}
-                        min={element.min_value}
-                        max={element.max_value}
-                        className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg text-right font-mono focus:outline-none"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
-                        className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                      >
-                        <span className="icon icon-sm">check</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
-                        className="p-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-                      >
-                        <span className="icon icon-sm">close</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className={`px-4 py-2 rounded-lg text-right font-mono text-lg ${
-                      status === 'valid' ? 'bg-green-50 text-green-800' :
-                      status === 'warning' ? 'bg-amber-50 text-amber-800' :
-                      status === 'error' ? 'bg-red-50 text-red-800' :
-                      'bg-gray-100 text-gray-400'
-                    }`}>
-                      {value || '—'}
-                    </div>
-                  )}
+                <div className="w-56">
+                  <div className={`px-4 py-3 rounded-xl text-right font-mono text-xl border-2 transition ${
+                    status === 'valid' ? 'bg-green-50 text-green-800 border-green-200' :
+                    status === 'warning' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                    status === 'error' ? 'bg-red-50 text-red-800 border-red-200' :
+                    'bg-gray-50 text-gray-400 border-gray-200'
+                  } ${!readOnly ? 'group-hover:border-blue-400 group-hover:bg-blue-50' : ''}`}>
+                    {value || '—'}
+                    {element.unit && value && (
+                      <span className="text-sm text-gray-500 ml-2">{element.unit}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Status Icon */}
@@ -194,9 +164,9 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
                 </div>
 
                 {/* Edit Icon */}
-                {!readOnly && !isEditing && (
+                {!readOnly && (
                   <div className="w-10 text-center opacity-0 group-hover:opacity-100 transition">
-                    <span className="icon text-gray-400">edit</span>
+                    <span className="icon text-blue-500">keyboard</span>
                   </div>
                 )}
               </div>
@@ -214,14 +184,28 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
 
         {/* Table Footer */}
         {!readOnly && (
-          <div className="bg-gray-50 border-t border-gray-200 px-6 py-3">
-            <p className="text-sm text-gray-500 flex items-center gap-2">
-              <span className="icon icon-sm">info</span>
-              Değer düzenlemek için satıra tıklayın
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-t border-gray-200 px-6 py-3">
+            <p className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="icon icon-sm text-blue-500">touch_app</span>
+              Değer düzenlemek için satıra dokunun - Ekran klavyesi açılacaktır
             </p>
           </div>
         )}
       </div>
     </form>
+
+    {/* Virtual Keyboard */}
+    <VirtualKeyboard
+      isOpen={keyboardOpen}
+      onClose={handleCloseKeyboard}
+      onSubmit={handleKeyboardSubmit}
+      dataType={keyboardElement?.data_type || 'string'}
+      currentValue={keyboardElement ? (values[keyboardElement.id] || '') : ''}
+      fieldName={keyboardElement?.name || ''}
+      unit={keyboardElement?.unit || ''}
+      min={keyboardElement?.min_value !== null ? parseFloat(keyboardElement.min_value) : null}
+      max={keyboardElement?.max_value !== null ? parseFloat(keyboardElement.max_value) : null}
+    />
+  </>
   );
 }
