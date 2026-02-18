@@ -10,6 +10,7 @@ const recipeRoutes = require('./routes/recipes');
 const elementRoutes = require('./routes/elements');
 const recordRoutes = require('./routes/records');
 const adminRoutes = require('./routes/admin');
+const workspaceRoutes = require('./routes/workspaces');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/recipes', recipeRoutes);
 app.use('/api/elements', elementRoutes);
 app.use('/api/records', recordRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/workspaces', workspaceRoutes);
 
 // Health check with uptime
 app.get('/api/health', (req, res) => {

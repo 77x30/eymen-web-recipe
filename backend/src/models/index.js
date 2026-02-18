@@ -4,6 +4,7 @@ const RecipeElement = require('./RecipeElement');
 const DataRecord = require('./DataRecord');
 const RecordValue = require('./RecordValue');
 const ActivityLog = require('./ActivityLog');
+const Workspace = require('./Workspace');
 
 // Define associations
 Recipe.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
@@ -22,11 +23,14 @@ RecordValue.belongsTo(RecipeElement, { foreignKey: 'element_id', as: 'element' }
 
 ActivityLog.belongsTo(User, { foreignKey: 'user_id' });
 
+Workspace.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
 module.exports = {
   User,
   Recipe,
   RecipeElement,
   DataRecord,
   RecordValue,
-  ActivityLog
+  ActivityLog,
+  Workspace
 };
