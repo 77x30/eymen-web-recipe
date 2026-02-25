@@ -216,4 +216,55 @@ router.get('/version', async (req, res) => {
   }
 });
 
+// Detailed system status (admin only)
+router.get('/status', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const startTime = Date.now();
+    
+    // Database latency test
+    const dbStart = Date.now();
+    await AppTelemetry.sequelize.query('SELECT 1');
+    const dbLatency = Date.now() - dbStart;
+    
+    // Memory usage
+    const mem = process.memoryUsage();
+    
+    // Count records
+    const [totalUsers, totalWorkspaces, totalUpdates, activeTelemetry] = await Promise.all([
+      User.count(),
+      Workspace.count(),
+      SystemUpdate.count(),
+      AppTelemetry.count({ where: { last_ping: { [Op.gt]: new Date(Date.now() - 5 * 60 * 1000) } } })
+    ]);
+    
+    const totalLatency = Date.now() - startTime;
+    
+    res.json({
+      api: {
+        status: 'online',
+        latency: totalLatency,
+        uptime: Math.floor(process.uptime()),
+        nodeVersion: process.version
+      },
+      database: {
+        status: 'online',
+        latency: dbLatency,
+        records: { users: totalUsers, workspaces: totalWorkspaces, updates: totalUpdates }
+      },
+      memory: {
+        rss: Math.round(mem.rss / 1024 / 1024),
+        heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+        external: Math.round(mem.external / 1024 / 1024)
+      },
+      connections: {
+        activeClients: activeTelemetry
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

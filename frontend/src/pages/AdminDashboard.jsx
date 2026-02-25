@@ -11,7 +11,7 @@ const COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { addToast } = useToast();
+  const { addToast, removeToast } = useToast();
   const { t } = useLocale();
   const { isDark } = useTheme();
   const [workspaces, setWorkspaces] = useState([]);
@@ -31,6 +31,8 @@ export default function AdminDashboard() {
   const [systemUpdates, setSystemUpdates] = useState([]);
   const [telemetry, setTelemetry] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
   const [commits, setCommits] = useState([]);
   const [loadingCommits, setLoadingCommits] = useState(false);
 
@@ -43,8 +45,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchData();
     fetchTelemetry();
+    fetchSystemStatus();
     const telemetryInterval = setInterval(fetchTelemetry, 10000);
-    return () => clearInterval(telemetryInterval);
+    const statusInterval = setInterval(fetchSystemStatus, 15000);
+    return () => { clearInterval(telemetryInterval); clearInterval(statusInterval); };
   }, []);
 
   const fetchTelemetry = async () => {
@@ -53,6 +57,20 @@ export default function AdminDashboard() {
       setTelemetry(response.data);
     } catch (error) {
       console.error('Error fetching telemetry:', error);
+    }
+  };
+
+  const fetchSystemStatus = async () => {
+    try {
+      const startTime = Date.now();
+      const response = await api.get('/system/status');
+      const frontendLatency = Date.now() - startTime;
+      setSystemStatus({ ...response.data, frontendLatency });
+    } catch (error) {
+      console.error('Error fetching system status:', error);
+      setSystemStatus(null);
+    } finally {
+      setLoadingStatus(false);
     }
   };
 
@@ -121,6 +139,27 @@ export default function AdminDashboard() {
     { name: 'Operatör', value: users.filter(u => u.role === 'operator').length },
     { name: 'İzleyici', value: users.filter(u => u.role === 'viewer').length }
   ].filter(r => r.value > 0);
+
+  const formatUptime = (seconds) => {
+    const d = Math.floor(seconds / 86400);
+    const h = Math.floor((seconds % 86400) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (d > 0) return `${d}g ${h}s ${m}d`;
+    if (h > 0) return `${h}s ${m}d`;
+    return `${m}d`;
+  };
+
+  const getLatencyColor = (ms) => {
+    if (ms < 100) return 'text-green-500';
+    if (ms < 300) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+
+  const getLatencyBg = (ms) => {
+    if (ms < 100) return isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200';
+    if (ms < 300) return isDark ? 'bg-yellow-900/30 border-yellow-800' : 'bg-yellow-50 border-yellow-200';
+    return isDark ? 'bg-red-900/30 border-red-800' : 'bg-red-50 border-red-200';
+  };
 
 
 
@@ -384,42 +423,168 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* System Status */}
+      {/* System Status - Detailed */}
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-        <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4`}>{t('admin.systemStatus')}</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-green-700 font-medium">{t('admin.apiServer')}</span>
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            </div>
-            <p className="text-2xl font-bold text-green-700">{t('admin.active')}</p>
-          </div>
-          
-          <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-green-700 font-medium">{t('admin.database')}</span>
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            </div>
-            <p className="text-2xl font-bold text-green-700">{t('admin.active')}</p>
-          </div>
-          
-          <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-green-700 font-medium">{t('admin.frontend')}</span>
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            </div>
-            <p className="text-2xl font-bold text-green-700">{t('admin.active')}</p>
-          </div>
-          
-          <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-green-700 font-medium">{t('admin.ssl')}</span>
-              <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            </div>
-            <p className="text-2xl font-bold text-green-700">{t('admin.valid')}</p>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} flex items-center gap-2`}>
+            <span className="icon text-green-600">monitor_heart</span>
+            {t('admin.systemStatus')}
+          </h3>
+          {systemStatus && (
+            <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'} flex items-center gap-1`}>
+              <span className="icon icon-sm">schedule</span>
+              {locale === 'tr' ? 'Her 15 saniyede güncellenir' : 'Updates every 15s'}
+            </span>
+          )}
         </div>
+
+        {loadingStatus ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : systemStatus ? (
+          <>
+            {/* Service Status Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.apiServer')}</span>
+                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
+                <p className={`text-xl font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.active')}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-green-500' : 'text-green-600'}`}>
+                  Node {systemStatus.api.nodeVersion}
+                </p>
+              </div>
+              
+              <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.database')}</span>
+                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
+                <p className={`text-xl font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.active')}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-green-500' : 'text-green-600'}`}>
+                  MySQL/Railway
+                </p>
+              </div>
+              
+              <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.frontend')}</span>
+                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
+                <p className={`text-xl font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.active')}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-green-500' : 'text-green-600'}`}>
+                  barida.xyz
+                </p>
+              </div>
+              
+              <div className={`p-4 ${isDark ? 'bg-green-900/30 border-green-800' : 'bg-green-50 border-green-200'} rounded-xl border`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.ssl')}</span>
+                  <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
+                <p className={`text-xl font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>{t('admin.valid')}</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-green-500' : 'text-green-600'}`}>
+                  HTTPS/TLS
+                </p>
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className={`p-3 ${getLatencyBg(systemStatus.api.latency)} rounded-lg border`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`icon icon-sm ${getLatencyColor(systemStatus.api.latency)}`}>speed</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {locale === 'tr' ? 'API Gecikme' : 'API Latency'}
+                  </span>
+                </div>
+                <p className={`text-lg font-bold ${getLatencyColor(systemStatus.api.latency)}`}>
+                  {systemStatus.api.latency} ms
+                </p>
+              </div>
+
+              <div className={`p-3 ${getLatencyBg(systemStatus.database.latency)} rounded-lg border`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`icon icon-sm ${getLatencyColor(systemStatus.database.latency)}`}>storage</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {locale === 'tr' ? 'DB Gecikme' : 'DB Latency'}
+                  </span>
+                </div>
+                <p className={`text-lg font-bold ${getLatencyColor(systemStatus.database.latency)}`}>
+                  {systemStatus.database.latency} ms
+                </p>
+              </div>
+
+              <div className={`p-3 ${getLatencyBg(systemStatus.frontendLatency)} rounded-lg border`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`icon icon-sm ${getLatencyColor(systemStatus.frontendLatency)}`}>public</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {locale === 'tr' ? 'Ağ Gecikme' : 'Network RTT'}
+                  </span>
+                </div>
+                <p className={`text-lg font-bold ${getLatencyColor(systemStatus.frontendLatency)}`}>
+                  {systemStatus.frontendLatency} ms
+                </p>
+              </div>
+
+              <div className={`p-3 ${isDark ? 'bg-blue-900/30 border-blue-800' : 'bg-blue-50 border-blue-200'} rounded-lg border`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="icon icon-sm text-blue-500">timer</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {locale === 'tr' ? 'Çalışma Süresi' : 'Uptime'}
+                  </span>
+                </div>
+                <p className="text-lg font-bold text-blue-500">
+                  {formatUptime(systemStatus.api.uptime)}
+                </p>
+              </div>
+
+              <div className={`p-3 ${isDark ? 'bg-purple-900/30 border-purple-800' : 'bg-purple-50 border-purple-200'} rounded-lg border`}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="icon icon-sm text-purple-500">memory</span>
+                  <span className={`text-xs font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {locale === 'tr' ? 'Bellek' : 'Memory'}
+                  </span>
+                </div>
+                <p className="text-lg font-bold text-purple-500">
+                  {systemStatus.memory.heapUsed}/{systemStatus.memory.heapTotal} MB
+                </p>
+              </div>
+            </div>
+
+            {/* DB Record Counts */}
+            <div className={`mt-4 p-3 ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'} rounded-lg flex items-center gap-6 text-sm`}>
+              <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                <span className="icon icon-sm align-middle mr-1">database</span>
+                {locale === 'tr' ? 'Veritabanı:' : 'Database:'}
+              </span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                <strong className={isDark ? 'text-white' : 'text-gray-800'}>{systemStatus.database.records.users}</strong> {locale === 'tr' ? 'kullanıcı' : 'users'}
+              </span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                <strong className={isDark ? 'text-white' : 'text-gray-800'}>{systemStatus.database.records.workspaces}</strong> {locale === 'tr' ? 'çalışma alanı' : 'workspaces'}
+              </span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                <strong className={isDark ? 'text-white' : 'text-gray-800'}>{systemStatus.database.records.updates}</strong> {locale === 'tr' ? 'güncelleme' : 'updates'}
+              </span>
+              <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
+                <strong className={isDark ? 'text-white' : 'text-gray-800'}>{systemStatus.connections.activeClients}</strong> {locale === 'tr' ? 'aktif istemci' : 'active clients'}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className={`p-4 ${isDark ? 'bg-red-900/30 border-red-800' : 'bg-red-50 border-red-200'} rounded-xl border`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-sm font-medium ${isDark ? 'text-red-400' : 'text-red-700'}`}>{t('admin.apiServer')}</span>
+                <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+              </div>
+              <p className={`text-xl font-bold ${isDark ? 'text-red-400' : 'text-red-700'}`}>{locale === 'tr' ? 'Çevrimdışı' : 'Offline'}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* WinForms Telemetry */}

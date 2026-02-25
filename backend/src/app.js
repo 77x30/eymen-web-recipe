@@ -36,10 +36,18 @@ app.use('/api/updates', updatesRoutes);
 
 // Health check with uptime
 app.get('/api/health', (req, res) => {
+  const mem = process.memoryUsage();
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime())
+    uptime: Math.floor(process.uptime()),
+    memory: {
+      rss: Math.round(mem.rss / 1024 / 1024),
+      heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+      heapTotal: Math.round(mem.heapTotal / 1024 / 1024)
+    },
+    nodeVersion: process.version,
+    platform: process.platform
   });
 });
 
