@@ -130,24 +130,24 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen min-h-[100dvh] flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md px-4">
+      <div className="relative z-10 w-full max-w-md px-4 py-6 sm:py-0 overflow-y-auto max-h-[100dvh]">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <img 
             src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
             alt="Barida Logo" 
-            className="h-16 mx-auto mb-4 brightness-0 invert"
+            className="h-12 sm:h-16 mx-auto mb-3 brightness-0 invert object-contain"
           />
-          <h1 className="text-2xl font-bold text-white">Recipe Management System</h1>
-          <p className="text-gray-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Recipe Management System</h1>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">
             {isSubdomain && workspace ? workspace.company || workspace.name : 'Industrial Automation Platform'}
           </p>
           {isSubdomain && workspace && (
@@ -159,9 +159,9 @@ export default function Login() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700">
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-semibold text-white flex items-center justify-center gap-2">
+        <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-700">
+          <div className="text-center mb-5 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center justify-center gap-2">
               <span className="icon">login</span>
               Oturum Aç
             </h2>
@@ -181,14 +181,15 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                   placeholder="Kullanıcı adınızı girin"
                   required
+                  autoComplete="username"
                 />
               </div>
             </div>
             
-            <div className="mb-6">
+            <div className="mb-5 sm:mb-6">
               <label className="block text-gray-300 text-sm font-medium mb-2">
                 Şifre
               </label>
@@ -198,23 +199,25 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
                   placeholder="Şifrenizi girin"
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
             
             {error && (
               <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm flex items-center gap-2">
-                <span className="icon icon-sm">error</span> {error}
+                <span className="icon icon-sm flex-shrink-0">error</span>
+                <span className="break-words">{error}</span>
               </div>
             )}
             
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+              className={`w-full py-3 rounded-lg font-semibold text-white transition text-base ${
                 loading 
                   ? 'bg-gray-600 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
@@ -242,7 +245,7 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-gray-500 text-sm">
+        <div className="text-center mt-4 sm:mt-6 pb-4 text-gray-500 text-sm">
           © 2026 Barida Makina • Industrial Solutions
         </div>
       </div>

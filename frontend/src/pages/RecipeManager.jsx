@@ -271,13 +271,37 @@ export default function RecipeManager() {
       </div>
 
       {/* Data Table */}
-      {selectedRecipe && (
+      {selectedRecipe && selectedRecipe.elements && selectedRecipe.elements.length > 0 && (
         <ModernDataTable
-          elements={selectedRecipe.elements || []}
+          elements={selectedRecipe.elements}
           record={selectedRecord}
           onSave={handleSaveRecord}
           readOnly={isViewOnly}
         />
+      )}
+
+      {selectedRecipe && (!selectedRecipe.elements || selectedRecipe.elements.length === 0) && (
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <span className="icon text-5xl text-gray-300 block mb-4">inventory_2</span>
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Bu reçetede parametre yok</h3>
+          <p className="text-gray-400">Reçeteye element ekleyerek parametreleri tanımlayın</p>
+        </div>
+      )}
+
+      {!selectedRecipe && recipes.length === 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+          <span className="icon text-5xl text-blue-300 block mb-4">receipt_long</span>
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Henüz reçete oluşturulmadı</h3>
+          <p className="text-gray-400 mb-6">İlk reçetenizi oluşturmak için aşağıdaki butona tıklayın</p>
+          {!isViewOnly && (
+            <button
+              onClick={() => setShowRecipeEditor(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition inline-flex items-center gap-2"
+            >
+              <span className="icon icon-sm">add</span> İlk Reçeteyi Oluştur
+            </button>
+          )}
+        </div>
       )}
 
       {/* Action Buttons */}

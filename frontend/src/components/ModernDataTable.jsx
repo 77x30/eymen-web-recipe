@@ -53,12 +53,13 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
   };
 
   const getValidationStatus = (element, value) => {
+    if (!element) return 'empty';
     if (!value) return 'empty';
     if (element.data_type === 'integer' || element.data_type === 'float') {
       const num = parseFloat(value);
       if (isNaN(num)) return 'error';
-      if (element.min_value !== null && num < parseFloat(element.min_value)) return 'warning';
-      if (element.max_value !== null && num > parseFloat(element.max_value)) return 'warning';
+      if (element.min_value != null && num < parseFloat(element.min_value)) return 'warning';
+      if (element.max_value != null && num > parseFloat(element.max_value)) return 'warning';
     }
     return 'valid';
   };
@@ -203,8 +204,8 @@ export default function ModernDataTable({ elements, record, onSave, readOnly = f
       currentValue={keyboardElement ? (values[keyboardElement.id] || '') : ''}
       fieldName={keyboardElement?.name || ''}
       unit={keyboardElement?.unit || ''}
-      min={keyboardElement?.min_value !== null ? parseFloat(keyboardElement.min_value) : null}
-      max={keyboardElement?.max_value !== null ? parseFloat(keyboardElement.max_value) : null}
+      min={keyboardElement?.min_value != null ? parseFloat(keyboardElement.min_value) : null}
+      max={keyboardElement?.max_value != null ? parseFloat(keyboardElement.max_value) : null}
     />
   </>
   );
