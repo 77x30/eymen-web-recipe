@@ -36,6 +36,8 @@ export default function AdminDashboard() {
   const [commits, setCommits] = useState([]);
   const [loadingCommits, setLoadingCommits] = useState(false);
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
+  const [screenshotBlobUrl, setScreenshotBlobUrl] = useState(null);
+  const [loadingScreenshot, setLoadingScreenshot] = useState(false);
 
   // Chart colors for dark/light mode
   const chartBg = isDark ? '#1f2937' : '#ffffff';
@@ -214,6 +216,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleViewScreenshot = async (screenshotUrl) => {
+    setSelectedScreenshot(screenshotUrl);
+    setLoadingScreenshot(true);
+    try {
+      const response = await api.get(screenshotUrl, { responseType: 'blob' });
+      const blobUrl = URL.createObjectURL(response.data);
+      setScreenshotBlobUrl(blobUrl);
+    } catch (error) {
+      console.error('Error loading screenshot:', error);
+      setScreenshotBlobUrl(null);
+    } finally {
+      setLoadingScreenshot(false);
+    }
+  };
+
+  const closeScreenshot = () => {
+    setSelectedScreenshot(null);
+    if (screenshotBlobUrl) {
+      URL.revokeObjectURL(screenshotBlobUrl);
+      setScreenshotBlobUrl(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -229,14 +254,6 @@ export default function AdminDashboard() {
         <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{t('admin.title')}</h1>
           <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('admin.subtitle')}</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => { setShowUpdateModal(true); fetchCommits(); }}
-            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center gap-2"
-          >
-            <span className="icon icon-sm">system_update</span> {t('admin.publishUpdate')}
-          </button>
         </div>
       </div>
 
@@ -284,7 +301,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link to="/workspaces" className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 hover:shadow-xl transition group`}>
           <div className="flex items-center gap-4">
             <div className={`w-14 h-14 ${isDark ? 'bg-red-900/30' : 'bg-red-100'} rounded-xl flex items-center justify-center group-hover:bg-red-200 transition`}>
@@ -308,21 +325,6 @@ export default function AdminDashboard() {
             </div>
           </div>
         </Link>
-        
-        <div 
-          onClick={() => setShowUpdateModal(true)}
-          className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6 hover:shadow-xl transition group cursor-pointer`}
-        >
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 ${isDark ? 'bg-green-900/30' : 'bg-green-100'} rounded-xl flex items-center justify-center group-hover:bg-green-200 transition`}>
-              <span className="icon text-green-600 text-2xl">rocket_launch</span>
-            </div>
-            <div>
-              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'} group-hover:text-green-600 transition`}>{t('admin.publishUpdate')}</h3>
-              <p className={isDark ? 'text-gray-400' : 'text-gray-500'} style={{fontSize: '0.875rem'}}>{t('admin.publishUpdateDesc')}</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Charts Row */}
@@ -651,7 +653,7 @@ export default function AdminDashboard() {
                             <span className="text-xs">v{client.app_version}</span>
                             {client.screenshot_url && (
                               <button
-                                onClick={() => setSelectedScreenshot(client.screenshot_url)}
+                                onClick={() => handleViewScreenshot(client.screenshot_url)}
                                 className="text-blue-400 hover:text-blue-300 transition"
                                 title={locale === 'tr' ? 'Ekran görüntüsü' : 'Screenshot'}
                               >
@@ -688,48 +690,78 @@ export default function AdminDashboard() {
 
         {/* Published Updates History */}
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
-            <span className="icon text-green-600">history</span>
-            {t('admin.publishedUpdates')}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} flex items-center gap-2`}>
+              <span className="icon text-green-600">rocket_launch</span>
+              {t('admin.publishedUpdates')}
+            </h3>
+            <button
+              onClick={() => { setShowUpdateModal(true); fetchCommits(); }}
+              className="bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition flex items-center gap-1.5 text-sm font-medium"
+            >
+              <span className="icon icon-sm">add</span> {locale === 'tr' ? 'Yeni Güncelleme' : 'New Update'}
+            </button>
+          </div>
           {systemUpdates.length > 0 ? (
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {systemUpdates.map((update) => (
-                <div key={update.id} className={`p-3 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg border-l-4 border-green-500`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>v{update.version}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {new Date(update.created_at).toLocaleDateString('tr-TR')} {new Date(update.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <button
-                        onClick={() => handleDeleteUpdate(update.id)}
-                        className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 rounded transition"
-                        title={t('common.delete')}
-                      >
-                        <span className="icon icon-sm">delete</span>
-                      </button>
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              {systemUpdates.map((update, idx) => (
+                <div key={update.id} className={`p-4 rounded-xl border transition hover:shadow-md ${
+                  idx === 0 
+                    ? isDark ? 'bg-green-900/20 border-green-700' : 'bg-green-50 border-green-200' 
+                    : isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
+                        idx === 0 
+                          ? 'bg-green-500 text-white' 
+                          : isDark ? 'bg-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        v{update.version}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                            {locale === 'tr' ? 'Sürüm' : 'Version'} {update.version}
+                          </span>
+                          {idx === 0 && (
+                            <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-medium">
+                              {locale === 'tr' ? 'Güncel' : 'Latest'}
+                            </span>
+                          )}
+                          {update.target_workspaces && (
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-600'}`}>
+                              <span className="icon icon-sm mr-0.5" style={{fontSize: '12px'}}>domain</span>
+                              {locale === 'tr' ? 'Özel' : 'Targeted'}
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {new Date(update.created_at).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })} • {new Date(update.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} • {update.creator?.username || 'Admin'}
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => handleDeleteUpdate(update.id)}
+                      className={`p-1.5 rounded-lg transition ${isDark ? 'text-gray-500 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                      title={t('common.delete')}
+                    >
+                      <span className="icon icon-sm">delete</span>
+                    </button>
                   </div>
-                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{update.note || t('admin.noDescription')}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {t('admin.publishedBy')} {update.creator?.username || 'Admin'}
+                  {update.note && (
+                    <p className={`text-sm mt-2 ml-13 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} style={{marginLeft: '52px'}}>
+                      {update.note}
                     </p>
-                    {update.target_workspaces && (
-                      <span className={`text-xs px-2 py-0.5 rounded ${isDark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-600'}`}>
-                        <span className="icon icon-sm mr-1">domain</span>
-                        {t('admin.workspaceUpdate')}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
           ) : (
-            <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              <span className="icon text-3xl mb-2 block">update</span>
-              <p>{t('admin.noUpdatesYet')}</p>
+            <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <span className="icon text-4xl mb-3 block">update</span>
+              <p className="font-medium">{t('admin.noUpdatesYet')}</p>
+              <p className="text-sm mt-1">{locale === 'tr' ? 'İlk güncellemenizi yayınlayın' : 'Publish your first update'}</p>
             </div>
           )}
         </div>
@@ -918,19 +950,30 @@ export default function AdminDashboard() {
 
       {/* Screenshot Modal */}
       {selectedScreenshot && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedScreenshot(null)}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeScreenshot}>
           <div className={`relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+            <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 <span className="icon icon-sm mr-2">screenshot_monitor</span>
                 {locale === 'tr' ? 'Ekran Görüntüsü' : 'Screenshot'}
               </h3>
-              <button onClick={() => setSelectedScreenshot(null)} className={`p-1 rounded-lg hover:bg-gray-700 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <button onClick={closeScreenshot} className={`p-1 rounded-lg ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
                 <span className="icon">close</span>
               </button>
             </div>
             <div className="p-2">
-              <img src={selectedScreenshot} alt="Client Screenshot" className="w-full h-auto rounded-lg" />
+              {loadingScreenshot ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                </div>
+              ) : screenshotBlobUrl ? (
+                <img src={screenshotBlobUrl} alt="Client Screenshot" className="w-full h-auto rounded-lg" />
+              ) : (
+                <div className={`text-center py-20 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <span className="icon text-4xl mb-2 block">broken_image</span>
+                  <p>{locale === 'tr' ? 'Ekran görüntüsü yüklenemedi' : 'Screenshot could not be loaded'}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
