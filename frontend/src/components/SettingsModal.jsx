@@ -89,7 +89,7 @@ export default function SettingsModal({ isOpen, onClose }) {
             }`}
           >
             <span className="icon icon-sm mr-1">tune</span>
-            Genel
+            {t('settings.general')}
           </button>
           {canEditWorkspace && workspace && (
             <button
@@ -101,7 +101,7 @@ export default function SettingsModal({ isOpen, onClose }) {
               }`}
             >
               <span className="icon icon-sm mr-1">business</span>
-              Workspace
+              {t('settings.workspace')}
             </button>
           )}
         </div>
@@ -226,7 +226,7 @@ export default function SettingsModal({ isOpen, onClose }) {
                   </span>
                 </div>
                 <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                  Subdomain değiştirmek için admin ile iletişime geçin
+                  {t('settings.subdomainNote')}
                 </p>
               </div>
 

@@ -20,3 +20,7 @@ C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\N
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRe.61EE3C74.Up2Date
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.exe
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.pdb
+C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\BaridaRecipeManager.exe.manifest
+C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\BaridaRecipeManager.application
+C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.exe.manifest
+C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.application

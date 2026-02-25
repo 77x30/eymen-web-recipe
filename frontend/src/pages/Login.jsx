@@ -196,16 +196,16 @@ export default function Login() {
             <div className="w-10 h-10 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-2">
               <span className="icon text-blue-400 text-xl">login</span>
             </div>
-            <h2 className="text-lg sm:text-xl font-semibold text-white">Oturum Aç</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-white">{t('login.heading')}</h2>
             <p className="text-gray-400 text-sm mt-1">
-              {isSubdomain ? 'Workspace hesabınızla giriş yapın' : 'Admin paneline giriş yapın'}
+              {isSubdomain ? t('login.workspaceHint') : t('login.adminHint')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-2.5">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">
-                Kullanıcı Adı
+                {t('login.username')}
               </label>
               <div className="relative">
                 <span className="icon icon-sm absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">person</span>
@@ -214,7 +214,7 @@ export default function Login() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-12 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition"
-                  placeholder="Kullanıcı adınızı girin"
+                  placeholder={t('login.usernamePlaceholder')}
                   required
                   autoComplete="username"
                 />
@@ -223,7 +223,7 @@ export default function Login() {
             
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-1">
-                Şifre
+                {t('login.password')}
               </label>
               <div className="relative">
                 <span className="icon icon-sm absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">lock</span>
@@ -232,7 +232,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-4 py-2.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base transition"
-                  placeholder="Şifrenizi girin"
+                  placeholder={t('login.passwordPlaceholder')}
                   required
                   autoComplete="current-password"
                 />
@@ -261,10 +261,10 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  İşleniyor...
+                  {t('login.loading')}
                 </span>
               ) : (
-                'Giriş Yap'
+                t('login.submit')
               )}
             </button>
           </form>
@@ -274,7 +274,7 @@ export default function Login() {
 
         {/* Footer */}
         <div className="text-center pt-1 pb-0.5 text-gray-500 text-[11px] sm:text-xs">
-          © 2026 Barida Makina • Industrial Solutions
+          {t('footer.copyright')}
         </div>
       </div>
 
@@ -286,9 +286,9 @@ export default function Login() {
               <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="icon text-4xl text-blue-400">qr_code_scanner</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Biyometrik Doğrulama Gerekli</h3>
+              <h3 className="text-xl font-bold text-white mb-2">{t('biometric.required')}</h3>
               <p className="text-gray-400 text-sm mb-6">
-                İlk girişiniz için yüz doğrulaması yapmanız gerekmektedir. QR kodu telefonunuzla taratın.
+                {t('biometric.scanQR')}
               </p>
               
               {qrCodeUrl && (
@@ -298,7 +298,7 @@ export default function Login() {
               )}
               
               <p className="text-gray-500 text-xs mb-4">
-                QR kodu taratarak identity.barida.xyz adresine yönlendirileceksiniz
+                {t('login.redirectToIdentity')}
               </p>
 
               {checkingVerification && (
@@ -307,7 +307,7 @@ export default function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Doğrulama bekleniyor...</span>
+                  <span>{t('biometric.waiting')}</span>
                 </div>
               )}
 
@@ -318,7 +318,7 @@ export default function Login() {
                 }}
                 className="mt-4 text-gray-400 hover:text-white text-sm"
               >
-                İptal
+                {t('biometric.cancel')}
               </button>
             </div>
           </div>
