@@ -138,18 +138,18 @@ export default function Login() {
         }}></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md h-full mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col">
-        <div className="flex-1 flex flex-col justify-center">
+      <div className="relative z-10 w-full max-w-md h-full mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col justify-between">
+        <div className="w-full pt-0.5">
           {/* Logo */}
-          <div className="text-center mb-4 w-full">
+          <div className="text-center mb-3 w-full">
             <img 
               src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
               alt="Barida Logo" 
-              className="w-[220px] sm:w-[240px] h-auto mx-auto mb-2.5 brightness-0 invert block"
+              className="w-[230px] sm:w-[248px] h-auto mx-auto mb-2 brightness-0 invert object-contain block translate-x-px"
             />
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">Recipe Management System</h1>
             {!isSubdomain && (
-              <p className="text-gray-400 mt-1 text-sm">
+              <p className="text-gray-400 mt-1 text-xs sm:text-sm">
                 Industrial Automation Platform
               </p>
             )}
@@ -162,7 +162,7 @@ export default function Login() {
           </div>
 
           {/* Login Card */}
-          <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-5 border border-gray-700 w-full">
+          <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 border border-gray-700 w-full">
           <div className="text-center mb-5">
             <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="icon text-blue-400 text-2xl">login</span>
@@ -173,7 +173,7 @@ export default function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
                 Kullanıcı Adı
@@ -240,16 +240,11 @@ export default function Login() {
             </button>
           </form>
 
-          {!isSubdomain && (
-            <p className="mt-3 text-center text-gray-500 text-xs">
-              Operatörler giriş yaptığında kendi workspace adreslerine yönlendirilir
-            </p>
-          )}
         </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center pt-2 text-gray-500 text-[11px] sm:text-xs">
+        <div className="text-center pb-0.5 text-gray-500 text-[11px] sm:text-xs">
           © 2026 Barida Makina • Industrial Solutions
         </div>
       </div>
