@@ -4,6 +4,43 @@ const { Op } = require('sequelize');
 const SystemUpdate = require('../models/SystemUpdate');
 const Workspace = require('../models/Workspace');
 
+// GitHub repo info
+const GITHUB_OWNER = '77x30';
+const GITHUB_REPO = 'eymen-web-recipe';
+
+// Get recent GitHub commits
+router.get('/commits', async (req, res) => {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?per_page=20`, {
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'BaridaRecipeManager'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('GitHub API error');
+    }
+    
+    const commits = await response.json();
+    
+    // Format commits for frontend
+    const formattedCommits = commits.map(c => ({
+      sha: c.sha.substring(0, 7),
+      message: c.commit.message.split('\n')[0], // First line only
+      fullMessage: c.commit.message,
+      author: c.commit.author.name,
+      date: c.commit.author.date,
+      url: c.html_url
+    }));
+    
+    res.json(formattedCommits);
+  } catch (error) {
+    console.error('GitHub commits error:', error);
+    res.status(500).json({ error: 'Failed to fetch commits' });
+  }
+});
+
 // Get latest update info (for WinForms app)
 router.get('/check', async (req, res) => {
   try {

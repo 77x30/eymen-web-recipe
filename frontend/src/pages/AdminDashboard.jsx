@@ -31,6 +31,8 @@ export default function AdminDashboard() {
   const [systemUpdates, setSystemUpdates] = useState([]);
   const [telemetry, setTelemetry] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const [commits, setCommits] = useState([]);
+  const [loadingCommits, setLoadingCommits] = useState(false);
 
   // Chart colors for dark/light mode
   const chartBg = isDark ? '#1f2937' : '#ffffff';
@@ -88,6 +90,22 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCommits = async () => {
+    setLoadingCommits(true);
+    try {
+      const response = await api.get('/updates/commits');
+      setCommits(response.data);
+    } catch (error) {
+      console.error('Error fetching commits:', error);
+    } finally {
+      setLoadingCommits(false);
+    }
+  };
+
+  const handleSelectCommit = (commit) => {
+    setUpdateNote(commit.message);
   };
 
   // Chart data - users per workspace
@@ -174,7 +192,7 @@ export default function AdminDashboard() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => setShowUpdateModal(true)}
+            onClick={() => { setShowUpdateModal(true); fetchCommits(); }}
             className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition flex items-center gap-2"
           >
             <span className="icon icon-sm">system_update</span> {t('admin.publishUpdate')}
@@ -640,13 +658,52 @@ export default function AdminDashboard() {
             </div>
             
             <div>
-              <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>{t('admin.updateNote')}</label>
+              <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                {t('admin.updateNote')} 
+                <span className="text-xs text-gray-500 ml-2">veya aşağıdan commit seç</span>
+              </label>
               <textarea
                 value={updateNote}
                 onChange={(e) => setUpdateNote(e.target.value)}
                 className={`w-full px-4 py-2 border ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent h-24 resize-none`}
                 placeholder={t('admin.updateDescription')}
               />
+            </div>
+
+            {/* GitHub Commits */}
+            <div>
+              <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                <span className="icon icon-sm align-middle mr-1">commit</span>
+                Son GitHub Commitler
+              </label>
+              {loadingCommits ? (
+                <div className="flex items-center justify-center py-4">
+                  <span className="icon animate-spin mr-2">sync</span> Yükleniyor...
+                </div>
+              ) : (
+                <div className={`max-h-40 overflow-y-auto rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-300'}`}>
+                  {commits.map((commit) => (
+                    <button
+                      key={commit.sha}
+                      type="button"
+                      onClick={() => handleSelectCommit(commit)}
+                      className={`w-full text-left px-3 py-2 border-b last:border-b-0 hover:bg-green-500/20 transition ${
+                        updateNote === commit.message ? 'bg-green-500/30' : ''
+                      } ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <code className="text-xs text-green-500 font-mono">{commit.sha}</code>
+                        <span className={`text-sm flex-1 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                          {commit.message}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {commit.author} • {new Date(commit.date).toLocaleDateString('tr-TR')}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="flex gap-3 mt-6">
