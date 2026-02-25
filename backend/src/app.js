@@ -51,20 +51,40 @@ async function cleanupMockRecipes() {
   const { Recipe, RecipeElement, DataRecord, RecordValue } = require('./models');
 
   const mockNamePatterns = [
+    '%Rulo Açıcı%',
+    '%Rulo Acici%',
     '%Coil Opener%',
+    '%Pres Makinesi%',
+    '%Pres Makinası%',
     '%Press Machine%',
     '%CNC Tezgahı%',
+    '%CNC Tezgahi%',
     '%CNC Machine%',
     '%Boya Karıştırma%',
-    '%Paint Mixing%'
+    '%Boya Karistirma%',
+    '%Boya Makinesi%',
+    '%Boya Makineleri%',
+    '%Paint Mixing%',
+    '%RGB Colors%'
+  ];
+  const mockDescriptionPatterns = [
+    '%Coil opening machine parameters%',
+    '%Hydraulic press machine parameters%',
+    '%CNC machining center parameters%',
+    '%Paint mixing parameters%'
   ];
 
   const mockRecipes = await Recipe.findAll({
     attributes: ['id', 'name'],
     where: {
-      [Op.or]: mockNamePatterns.map(pattern => ({
-        name: { [Op.like]: pattern }
-      }))
+      [Op.or]: [
+        ...mockNamePatterns.map(pattern => ({
+          name: { [Op.like]: pattern }
+        })),
+        ...mockDescriptionPatterns.map(pattern => ({
+          description: { [Op.like]: pattern }
+        }))
+      ]
     }
   });
 
