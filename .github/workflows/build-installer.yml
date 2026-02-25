@@ -25,11 +25,19 @@ jobs:
     
     - name: Restore NuGet packages
       working-directory: winforms/BaridaRecipeManager
-      run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
+      run: |
+        nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
+        echo "=== Packages directory contents ==="
+        Get-ChildItem ../packages -Directory | Select-Object Name
+        echo "=== Costura.Fody check ==="
+        if (Test-Path "../packages/Costura.Fody.5.7.0") { echo "Costura.Fody found" } else { echo "Costura.Fody NOT found!" }
     
     - name: Build WinForms Application
       working-directory: winforms/BaridaRecipeManager
-      run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /p:SolutionDir=..\ /t:Rebuild
+      run: |
+        $solutionDir = (Resolve-Path "..").Path + "\"
+        echo "SolutionDir: $solutionDir"
+        msbuild BaridaRecipeManager.csproj /p:Configuration=Release "/p:SolutionDir=$solutionDir" /t:Rebuild /v:detailed 2>&1 | Select-String -Pattern "Fody|Costura|weaver|error" | Select-Object -First 30
     
     - name: Get version
       id: version
