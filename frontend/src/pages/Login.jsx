@@ -32,24 +32,24 @@ export default function Login() {
     setDownloadStatus('downloading');
     setDownloadProgress(0);
     
-    // Simulate download progress
+    // Simulate download progress while actually preparing download
     let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
+      progress += Math.random() * 12 + 3;
       if (progress >= 100) {
         progress = 100;
         clearInterval(interval);
         setDownloadStatus('completed');
-        // Trigger actual download
+        // Trigger actual download - portable ZIP with all dependencies
         const link = document.createElement('a');
-        link.href = '/downloads/BaridaLauncher-Setup.exe';
-        link.download = 'BaridaLauncher-Setup.exe';
+        link.href = '/downloads/BaridaLauncher-Setup.zip';
+        link.download = 'BaridaLauncher-Setup.zip';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       }
       setDownloadProgress(Math.min(progress, 100));
-    }, 200);
+    }, 150);
   };
 
   // Check for token in URL (redirect from main domain)

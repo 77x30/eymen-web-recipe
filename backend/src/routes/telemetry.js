@@ -146,21 +146,35 @@ router.post('/telemetry/heartbeat', async (req, res) => {
     }
     
     // Upsert telemetry record
-    const [telemetry, created] = await AppTelemetry.upsert({
-      device_id,
-      workspace_id,
-      username,
-      app_version,
-      ram_usage_mb,
-      cpu_usage_percent,
-      os_info,
-      screen_resolution,
-      status: 'online',
-      last_ping: new Date(),
-      first_seen: created ? new Date() : undefined
-    }, {
-      returning: true
-    });
+    const existingRecord = await AppTelemetry.findOne({ where: { device_id } });
+    
+    if (existingRecord) {
+      await existingRecord.update({
+        workspace_id,
+        username,
+        app_version,
+        ram_usage_mb,
+        cpu_usage_percent,
+        os_info,
+        screen_resolution,
+        status: 'online',
+        last_ping: new Date()
+      });
+    } else {
+      await AppTelemetry.create({
+        device_id,
+        workspace_id,
+        username,
+        app_version,
+        ram_usage_mb,
+        cpu_usage_percent,
+        os_info,
+        screen_resolution,
+        status: 'online',
+        last_ping: new Date(),
+        first_seen: new Date()
+      });
+    }
     
     // Get latest update for this workspace
     const latestUpdate = await SystemUpdate.findOne({
