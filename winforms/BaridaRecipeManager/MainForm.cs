@@ -58,11 +58,13 @@ namespace BaridaRecipeManager
 
         private void CoreWebView2_NavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
         {
-            ShowLoadingOverlay("Yükleniyor...");
+            // Don't show loading overlay - splash screen already handles initial load
+            // and website has its own loading states
         }
 
         private void CoreWebView2_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
+            // Navigation completed - hide any loading overlay if shown by live update
             HideLoadingOverlay();
         }
 
@@ -108,7 +110,7 @@ namespace BaridaRecipeManager
             {
                 this.Invoke((Action)ShowLiveUpdateAnimation);
                 return;
-            }
+            }   
 
             ShowLoadingOverlay("Canlı Güncelleme\nYeni içerik yükleniyor...");
 

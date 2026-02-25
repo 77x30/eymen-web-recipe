@@ -41,15 +41,13 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [workspacesRes, usersRes, updatesRes] = await Promise.all([
+      const [workspacesRes, usersRes] = await Promise.all([
         api.get('/workspaces'),
-        api.get('/admin/users'),
-        api.get('/system/updates')
+        api.get('/admin/users')
       ]);
       
       setWorkspaces(workspacesRes.data);
       setUsers(usersRes.data);
-      setSystemUpdates(updatesRes.data);
       
       // Calculate stats
       const pendingVerifications = usersRes.data.filter(u => !u.biometric_verified && u.role !== 'admin').length;
@@ -61,6 +59,15 @@ export default function AdminDashboard() {
         activeUsers,
         pendingVerifications
       });
+      
+      // Fetch updates separately to avoid breaking main data fetch
+      try {
+        const updatesRes = await api.get('/system/updates');
+        setSystemUpdates(updatesRes.data);
+      } catch (updateError) {
+        console.error('Error fetching updates:', updateError);
+        setSystemUpdates([]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

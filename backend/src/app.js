@@ -152,6 +152,12 @@ async function seedDatabase() {
 sequelize.authenticate()
   .then(async () => {
     console.log('Database connection established');
+    
+    // Sync only new tables (SystemUpdate, AppTelemetry)
+    const { SystemUpdate, AppTelemetry } = require('./models');
+    await SystemUpdate.sync({ alter: false });
+    await AppTelemetry.sync({ alter: false });
+    
     await cleanupMockRecipes();
     await seedDatabase();
     app.listen(PORT, () => {

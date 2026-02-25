@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useLocale } from '../context/LocaleContext';
+import { useToast } from '../components/Toast';
 import QRCode from 'qrcode';
 import api from '../services/api';
 
@@ -16,6 +18,8 @@ export default function Login() {
   const [checkingVerification, setCheckingVerification] = useState(false);
   const { login, setUserFromToken } = useAuth();
   const { workspace, isSubdomain, isMainDomain } = useWorkspace();
+  const { t } = useLocale();
+  const { addToast, updateToast, removeToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -74,6 +78,9 @@ export default function Login() {
     setError('');
     setLoading(true);
     
+    // Show API testing toast
+    const toastId = addToast(t('login.apiTesting'), 'loading', 0);
+    
     try {
       // Get subdomain from current hostname
       const hostname = window.location.hostname;
@@ -86,6 +93,9 @@ export default function Login() {
 
       const result = await login(username, password, subdomain);
       
+      // Update toast to success
+      updateToast(toastId, t('login.apiConnected'), 'success');
+      
       // If user needs to be redirected to their workspace
       if (result.redirectToWorkspace) {
         // Clear local storage before redirect (different subdomain)
@@ -97,13 +107,22 @@ export default function Login() {
         const port = window.location.port ? `:${window.location.port}` : '';
         const workspaceUrl = `${protocol}//${result.redirectToWorkspace}.barida.xyz${port}/login?token=${encodeURIComponent(result.token)}&user=${encodeURIComponent(JSON.stringify(result.user))}`;
         
+        // Show redirect toast
+        setTimeout(() => {
+          removeToast(toastId);
+          addToast(t('login.redirecting'), 'info', 2000);
+        }, 1000);
+        
         // Redirect to workspace
-        window.location.href = workspaceUrl;
+        setTimeout(() => {
+          window.location.href = workspaceUrl;
+        }, 1500);
         return;
       }
       
       // Check if biometric verification is required
       if (result.requiresBiometric) {
+        removeToast(toastId);
         // Generate QR code for verification
         const verifyResponse = await api.post('/auth/generate-verification');
         const { verificationUrl, token } = verifyResponse.data;
@@ -120,10 +139,20 @@ export default function Login() {
         setShowBiometricModal(true);
         setCheckingVerification(true);
       } else {
-        navigate('/');
+        // Show redirect toast and navigate
+        setTimeout(() => {
+          removeToast(toastId);
+          addToast(t('login.redirecting'), 'success', 2000);
+        }, 800);
+        
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred');
+      removeToast(toastId);
+      setError(err.response?.data?.error || t('login.error'));
+      addToast(t('login.error'), 'error', 3000);
     } finally {
       setLoading(false);
     }

@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import SettingsModal from './SettingsModal';
 
 const APP_VERSION = '1.0.0';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [showInfo, setShowInfo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -18,9 +22,9 @@ export default function AdminLayout() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Header */}
-      <header className="bg-gradient-to-r from-gray-900 to-gray-800 text-white shadow-lg sticky top-0 z-50">
+      <header className={`shadow-lg sticky top-0 z-50 ${isDark ? 'bg-gradient-to-r from-gray-900 to-gray-800' : 'bg-gradient-to-r from-gray-900 to-gray-800'} text-white`}>
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <div className="flex items-center gap-3">
@@ -67,6 +71,14 @@ export default function AdminLayout() {
           </div>
           
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition"
+              title="Ayarlar"
+            >
+              <span className="icon">settings</span>
+            </button>
+            
             <button
               onClick={() => setShowInfo(true)}
               className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition"
@@ -158,6 +170,9 @@ export default function AdminLayout() {
           </div>
         </div>
       )}
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 }

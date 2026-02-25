@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { AuthProvider } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
+import { LocaleProvider } from './context/LocaleContext'
+import { ThemeProvider } from './context/ThemeContext'
+import { ToastProvider } from './components/Toast'
 import './index.css'
 
 // Error Boundary Component
@@ -50,11 +53,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <WorkspaceProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </WorkspaceProvider>
+        <ThemeProvider>
+          <LocaleProvider>
+            <ToastProvider>
+              <WorkspaceProvider>
+                <AuthProvider>
+                  <App />
+                </AuthProvider>
+              </WorkspaceProvider>
+            </ToastProvider>
+          </LocaleProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>,
