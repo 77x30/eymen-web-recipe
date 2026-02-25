@@ -24,11 +24,12 @@ jobs:
       uses: NuGet/setup-nuget@v2
     
     - name: Restore NuGet packages
-      run: nuget restore winforms/BaridaRecipeManager/BaridaRecipeManager.csproj
+      working-directory: winforms/BaridaRecipeManager
+      run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory packages
     
     - name: Build WinForms Application
-      run: |
-        msbuild winforms/BaridaRecipeManager/BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
+      working-directory: winforms/BaridaRecipeManager
+      run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
     
     - name: Download Inno Setup
       run: |
