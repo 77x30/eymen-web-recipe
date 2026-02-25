@@ -145,4 +145,25 @@ router.post('/:id/test', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// Get workspace users (admin only - for Netflix-style user selection)
+router.get('/:id/users', authenticate, authorize('admin', 'sub_admin'), async (req, res) => {
+  try {
+    const workspace = await Workspace.findByPk(req.params.id);
+    
+    if (!workspace) {
+      return res.status(404).json({ error: 'Workspace not found' });
+    }
+    
+    const users = await User.findAll({
+      where: { workspace_id: req.params.id },
+      attributes: ['id', 'username', 'role', 'biometric_verified', 'first_login', 'created_at'],
+      order: [['username', 'ASC']]
+    });
+    
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

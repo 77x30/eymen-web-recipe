@@ -3,14 +3,14 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LocaleContext';
+import { useVersion } from '../context/VersionContext';
 import SettingsModal from './SettingsModal';
-
-const APP_VERSION = '1.0.0';
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
   const { t } = useLocale();
+  const { version } = useVersion();
   const navigate = useNavigate();
   const location = useLocation();
   const [showInfo, setShowInfo] = useState(false);
@@ -58,16 +58,6 @@ export default function AdminLayout() {
                 }`}
               >
                 <span className="icon icon-sm">business</span> {t('nav.workspaces')}
-              </Link>
-              <Link 
-                to="/users" 
-                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
-                  isActive('/users')
-                    ? 'bg-red-600 text-white' 
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <span className="icon icon-sm">people</span> {t('nav.users')}
               </Link>
             </nav>
           </div>
@@ -122,7 +112,7 @@ export default function AdminLayout() {
             <span className="text-red-400">{t('footer.adminPanel')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-500">v{APP_VERSION}</span>
+            <span className="text-gray-500">v{version}</span>
             <span className="flex items-center gap-1 text-green-400">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               {t('common.online')}
@@ -146,7 +136,7 @@ export default function AdminLayout() {
             <div className={`p-6 space-y-4 ${isDark ? 'text-gray-300' : ''}`}>
               <div className={`flex justify-between py-2 border-b ${isDark ? 'border-gray-700' : ''}`}>
                 <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('info.version')}</span>
-                <span className="font-medium">v{APP_VERSION}</span>
+                <span className="font-medium">v{version}</span>
               </div>
               <div className={`flex justify-between py-2 border-b ${isDark ? 'border-gray-700' : ''}`}>
                 <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('info.status')}</span>

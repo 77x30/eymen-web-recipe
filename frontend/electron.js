@@ -63,7 +63,7 @@ function startLiveUpdateChecker() {
 function showLiveUpdateNotification() {
   if (!mainWindow) return;
   
-  // Inject live update overlay
+  // Inject live update overlay with modern UI (no emojis)
   mainWindow.webContents.executeJavaScript(`
     (function() {
       // Remove existing overlay if any
@@ -81,7 +81,7 @@ function showLiveUpdateNotification() {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(30, 58, 138, 0.95);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
             z-index: 99999;
             display: flex;
             flex-direction: column;
@@ -103,34 +103,70 @@ function showLiveUpdateNotification() {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          .update-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-            animation: pulse 1s ease infinite;
+          .update-icon-container {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            animation: pulse 2s ease infinite;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+          }
+          .update-icon-svg {
+            width: 56px;
+            height: 56px;
+            fill: none;
+            stroke: white;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
           }
           .update-title {
             font-size: 28px;
             font-weight: 700;
             margin-bottom: 10px;
+            letter-spacing: -0.5px;
           }
           .update-subtitle {
             font-size: 16px;
             opacity: 0.8;
             margin-bottom: 30px;
           }
-          .update-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+          .update-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+          }
+          .update-progress-bar {
+            width: 100%;
+            height: 100%;
+            background: white;
+            animation: progress 1.5s ease-out forwards;
+            transform-origin: left;
+          }
+          @keyframes progress {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
           }
         </style>
-        <div class="update-icon">🔄</div>
-        <div class="update-title">Canlı Güncelleme</div>
-        <div class="update-subtitle">Yeni içerik yükleniyor...</div>
-        <div class="update-spinner"></div>
+        <div class="update-icon-container">
+          <svg class="update-icon-svg" viewBox="0 0 24 24">
+            <path d="M21 2v6h-6"/>
+            <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <path d="M3 22v-6h6"/>
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+          </svg>
+        </div>
+        <div class="update-title">Canl Guncelleme</div>
+        <div class="update-subtitle">Yeni icerik yukleniyor...</div>
+        <div class="update-progress">
+          <div class="update-progress-bar"></div>
+        </div>
       \`;
       document.body.appendChild(overlay);
       

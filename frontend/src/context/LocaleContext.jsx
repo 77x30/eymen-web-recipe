@@ -103,6 +103,7 @@ const translations = {
     'admin.cancel': 'İptal',
     'admin.publish': 'Yayınla',
     'admin.publishing': 'Yayınlanıyor...',
+    'admin.publishedSuccessfully': 'başarıyla yayınlandı!',
     'admin.noWinformsConnected': 'Bağlı WinForms uygulaması yok',
     'admin.liveUpdateDescription': 'Bu güncelleme tüm aktif workspace\'lere anında yayınlanacak ve kullanıcılar sayfayı yenilemeden değişiklikleri görecektir.',
     'admin.updateDescription': 'Güncelleme açıklaması...',
@@ -168,6 +169,20 @@ const translations = {
     'info.adminSubtitle': 'Sistem Yönetim Merkezi',
     'info.administrator': 'Yönetici',
     'info.systemAdmin': 'Sistem Admini',
+    
+    // Update modal
+    'update.newUpdate': 'Yeni Güncelleme!',
+    'update.defaultNote': 'Bu güncelleme ile sistem iyileştirmeleri yapıldı.',
+    'update.continue': 'Devam Et',
+    
+    // User selection
+    'userSelect.title': 'Kullanıcı Seçin',
+    'userSelect.subtitle': 'Workspace\'e hangi hesapla girmek istiyorsunuz?',
+    'userSelect.admin': 'Admin olarak gir',
+    'userSelect.user': 'Kullanıcı olarak gir',
+    'userSelect.selectUser': 'Bir kullanıcı seçin',
+    'userSelect.noUsers': 'Bu workspace\'de kullanıcı yok',
+    'userSelect.enterAs': 'olarak giriş yap',
   },
   en: {
     // Login
@@ -271,6 +286,7 @@ const translations = {
     'admin.cancel': 'Cancel',
     'admin.publish': 'Publish',
     'admin.publishing': 'Publishing...',
+    'admin.publishedSuccessfully': 'successfully published!',
     'admin.noWinformsConnected': 'No connected WinForms apps',
     'admin.liveUpdateDescription': 'This update will be published instantly to all active workspaces and users will see changes without refreshing.',
     'admin.updateDescription': 'Update description...',
@@ -336,6 +352,20 @@ const translations = {
     'info.adminSubtitle': 'System Management Center',
     'info.administrator': 'Administrator',
     'info.systemAdmin': 'System Admin',
+    
+    // Update modal
+    'update.newUpdate': 'New Update!',
+    'update.defaultNote': 'System improvements have been made with this update.',
+    'update.continue': 'Continue',
+    
+    // User selection
+    'userSelect.title': 'Select User',
+    'userSelect.subtitle': 'Which account do you want to use to enter the workspace?',
+    'userSelect.admin': 'Enter as Admin',
+    'userSelect.user': 'Enter as User',
+    'userSelect.selectUser': 'Select a user',
+    'userSelect.noUsers': 'No users in this workspace',
+    'userSelect.enterAs': 'enter as',
   }
 };
 

@@ -119,7 +119,7 @@ export default function AdminDashboard() {
         note: updateNote
       });
       
-      addToast(`v${updateVersion} başarıyla yayınlandı! 🎉`, 'success', 4000);
+      addToast(`v${updateVersion} ${t('admin.publishedSuccessfully')}`, 'success', 4000);
       setUpdateNote('');
       setUpdateVersion('');
       setShowUpdateModal(false);

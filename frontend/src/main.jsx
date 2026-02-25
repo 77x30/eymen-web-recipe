@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import { LocaleProvider } from './context/LocaleContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { VersionProvider } from './context/VersionContext'
 import { ToastProvider } from './components/Toast'
 import './index.css'
 
@@ -55,13 +56,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <ThemeProvider>
           <LocaleProvider>
-            <ToastProvider>
-              <WorkspaceProvider>
-                <AuthProvider>
-                  <App />
-                </AuthProvider>
-              </WorkspaceProvider>
-            </ToastProvider>
+            <VersionProvider>
+              <ToastProvider>
+                <WorkspaceProvider>
+                  <AuthProvider>
+                    <App />
+                  </AuthProvider>
+                </WorkspaceProvider>
+              </ToastProvider>
+            </VersionProvider>
           </LocaleProvider>
         </ThemeProvider>
       </BrowserRouter>

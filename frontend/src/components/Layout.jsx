@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLocale } from '../context/LocaleContext';
+import { useVersion } from '../context/VersionContext';
 import SettingsModal from './SettingsModal';
 
-const APP_VERSION = '1.0.0';
 const CREATOR = 'Eymen Gözel';
 const CREATOR_TITLE = 'Otomasyon ve Yazılım Sorumlusu';
 
@@ -15,6 +15,7 @@ export default function Layout() {
   const { workspace, isSubdomain } = useWorkspace();
   const { isDark } = useTheme();
   const { t } = useLocale();
+  const { version } = useVersion();
   const navigate = useNavigate();
   const location = useLocation();
   const [showInfo, setShowInfo] = useState(false);
@@ -134,7 +135,7 @@ export default function Layout() {
             <span>{t('footer.copyright')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-500">v{APP_VERSION}</span>
+            <span className="text-gray-500">v{version}</span>
             <span className="flex items-center gap-1 text-green-400">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               {t('common.online')}
@@ -158,7 +159,7 @@ export default function Layout() {
             <div className={`p-6 space-y-4 ${isDark ? 'text-gray-300' : ''}`}>
               <div className={`flex justify-between py-2 border-b ${isDark ? 'border-gray-700' : ''}`}>
                 <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('info.version')}</span>
-                <span className="font-medium">v{APP_VERSION}</span>
+                <span className="font-medium">v{version}</span>
               </div>
               <div className={`flex justify-between py-2 border-b ${isDark ? 'border-gray-700' : ''}`}>
                 <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('info.status')}</span>
