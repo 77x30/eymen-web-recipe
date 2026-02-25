@@ -29,7 +29,7 @@ jobs:
     
     - name: Build WinForms Application
       working-directory: winforms/BaridaRecipeManager
-      run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
+      run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /p:SolutionDir=..\ /t:Rebuild
     
     - name: Get version
       id: version
