@@ -132,6 +132,8 @@
     <Content Include="Resources\icon.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="WebView2Loader.x64.dll" />
+    <EmbeddedResource Include="WebView2Loader.x86.dll" />
     <None Include="BaridaRecipeManager_1_TemporaryKey.pfx" />
     <None Include="BaridaRecipeManager_TemporaryKey.pfx" />
     <None Include="packages.config" />

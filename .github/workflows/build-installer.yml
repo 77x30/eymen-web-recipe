@@ -27,6 +27,13 @@ jobs:
       working-directory: winforms/BaridaRecipeManager
       run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
     
+    - name: Prepare native DLLs for embedding
+      working-directory: winforms/BaridaRecipeManager
+      run: |
+        Copy-Item "../packages/Microsoft.Web.WebView2.1.0.2535.41/runtimes/win-x64/native/WebView2Loader.dll" "WebView2Loader.x64.dll" -Force
+        Copy-Item "../packages/Microsoft.Web.WebView2.1.0.2535.41/runtimes/win-x86/native/WebView2Loader.dll" "WebView2Loader.x86.dll" -Force
+        echo "Native DLLs copied for embedding"
+    
     - name: Build WinForms Application
       working-directory: winforms/BaridaRecipeManager
       run: |

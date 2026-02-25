@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace BaridaRecipeManager
@@ -19,6 +21,9 @@ namespace BaridaRecipeManager
         public static DateTime? UpdateReleasedAt = null;
         public static bool HasNewUpdate = false;
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetDllDirectory(string lpPathName);
+
         // Returns the effective version: installed_version.txt if exists, else APP_VERSION
         public static string GetEffectiveVersion()
         {
@@ -37,11 +42,45 @@ namespace BaridaRecipeManager
             return APP_VERSION;
         }
 
+        // Extract native WebView2Loader.dll from embedded resources
+        private static void ExtractNativeDlls()
+        {
+            try
+            {
+                var targetDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BaridaRecipeManager", "native");
+                Directory.CreateDirectory(targetDir);
+
+                var dllPath = Path.Combine(targetDir, "WebView2Loader.dll");
+                var resourceName = IntPtr.Size == 8
+                    ? "BaridaRecipeManager.WebView2Loader.x64.dll"
+                    : "BaridaRecipeManager.WebView2Loader.x86.dll";
+
+                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+                {
+                    if (stream != null)
+                    {
+                        using (var fs = new FileStream(dllPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            stream.CopyTo(fs);
+                        }
+                    }
+                }
+
+                SetDllDirectory(targetDir);
+            }
+            catch { }
+        }
+
         [STAThread]
         static void Main()
         {
             try
             {
+                // Extract native WebView2Loader.dll before any WebView2 usage
+                ExtractNativeDlls();
+
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 
