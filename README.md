@@ -55,6 +55,10 @@ cp .env.example .env
 
 # Start the server
 npm run dev
+
+# Optional: purge all recipes/records across workspaces
+# (use this to remove old mock/sample recipe data)
+npm run purge:recipes
 ```
 
 ### 3. Frontend Setup (Web)

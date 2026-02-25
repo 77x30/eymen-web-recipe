@@ -130,7 +130,7 @@ export default function Login() {
   };
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden p-3 sm:p-4">
+    <div className="relative h-[100dvh] w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0" style={{
@@ -138,28 +138,31 @@ export default function Login() {
         }}></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
-        {/* Logo */}
-        <div className="text-center mb-5 w-full">
-          <img 
-            src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
-            alt="Barida Logo" 
-            className="h-12 sm:h-14 mx-auto mb-3 brightness-0 invert object-contain"
-          />
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">Recipe Management System</h1>
-          <p className="text-gray-400 mt-1.5 text-sm">
-            {isSubdomain && workspace ? workspace.company || workspace.name : 'Industrial Automation Platform'}
-          </p>
-          {isSubdomain && workspace && (
-            <div className="mt-2.5 inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-400 text-sm">
-              <span className="icon icon-sm">business</span>
-              {workspace.name}
-            </div>
-          )}
-        </div>
+      <div className="relative z-10 w-full max-w-md h-full mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col">
+        <div className="flex-1 flex flex-col justify-center">
+          {/* Logo */}
+          <div className="text-center mb-4 w-full">
+            <img 
+              src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
+              alt="Barida Logo" 
+              className="w-[220px] sm:w-[240px] h-auto mx-auto mb-2.5 brightness-0 invert block"
+            />
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">Recipe Management System</h1>
+            {!isSubdomain && (
+              <p className="text-gray-400 mt-1 text-sm">
+                Industrial Automation Platform
+              </p>
+            )}
+            {isSubdomain && workspace && (
+              <div className="mt-2 inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-400 text-sm">
+                <span className="icon icon-sm">business</span>
+                {workspace.name}
+              </div>
+            )}
+          </div>
 
-        {/* Login Card */}
-        <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-5 sm:p-6 border border-gray-700 w-full">
+          {/* Login Card */}
+          <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-5 border border-gray-700 w-full">
           <div className="text-center mb-5">
             <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="icon text-blue-400 text-2xl">login</span>
@@ -170,7 +173,7 @@ export default function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
                 Kullanıcı Adı
@@ -238,14 +241,15 @@ export default function Login() {
           </form>
 
           {!isSubdomain && (
-            <p className="mt-4 text-center text-gray-500 text-xs">
+            <p className="mt-3 text-center text-gray-500 text-xs">
               Operatörler giriş yaptığında kendi workspace adreslerine yönlendirilir
             </p>
           )}
         </div>
+        </div>
 
         {/* Footer */}
-        <div className="text-center mt-4 text-gray-500 text-xs sm:text-sm">
+        <div className="text-center pt-2 text-gray-500 text-[11px] sm:text-xs">
           © 2026 Barida Makina • Industrial Solutions
         </div>
       </div>

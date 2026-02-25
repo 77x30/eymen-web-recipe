@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const sequelize = require('./config/database');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -46,6 +47,59 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3001;
 
+async function cleanupMockRecipes() {
+  const { Recipe, RecipeElement, DataRecord, RecordValue } = require('./models');
+
+  const mockNamePatterns = [
+    '%Coil Opener%',
+    '%Press Machine%',
+    '%CNC Tezgahı%',
+    '%CNC Machine%',
+    '%Boya Karıştırma%',
+    '%Paint Mixing%'
+  ];
+
+  const mockRecipes = await Recipe.findAll({
+    attributes: ['id', 'name'],
+    where: {
+      [Op.or]: mockNamePatterns.map(pattern => ({
+        name: { [Op.like]: pattern }
+      }))
+    }
+  });
+
+  if (mockRecipes.length === 0) {
+    return;
+  }
+
+  const recipeIds = mockRecipes.map(recipe => recipe.id);
+  const elementIds = (await RecipeElement.findAll({
+    attributes: ['id'],
+    where: { recipe_id: { [Op.in]: recipeIds } }
+  })).map(element => element.id);
+  const recordIds = (await DataRecord.findAll({
+    attributes: ['id'],
+    where: { recipe_id: { [Op.in]: recipeIds } }
+  })).map(record => record.id);
+
+  const recordValueFilters = [];
+  if (recordIds.length > 0) {
+    recordValueFilters.push({ data_record_id: { [Op.in]: recordIds } });
+  }
+  if (elementIds.length > 0) {
+    recordValueFilters.push({ element_id: { [Op.in]: elementIds } });
+  }
+  if (recordValueFilters.length > 0) {
+    await RecordValue.destroy({ where: { [Op.or]: recordValueFilters } });
+  }
+
+  await DataRecord.destroy({ where: { recipe_id: { [Op.in]: recipeIds } } });
+  await RecipeElement.destroy({ where: { recipe_id: { [Op.in]: recipeIds } } });
+  await Recipe.destroy({ where: { id: { [Op.in]: recipeIds } } });
+
+  console.log(`Removed ${mockRecipes.length} mock recipes from database`);
+}
+
 // Auto seed function - creates only admin users, no mock recipes
 async function seedDatabase() {
   const { User } = require('./models');
@@ -76,6 +130,7 @@ async function seedDatabase() {
 sequelize.authenticate()
   .then(async () => {
     console.log('Database connection established');
+    await cleanupMockRecipes();
     await seedDatabase();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
