@@ -20,6 +20,26 @@ const SystemUpdate = sequelize.define('SystemUpdate', {
     allowNull: true,
     comment: 'JSON array of workspace IDs, null means all'
   },
+  download_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    defaultValue: 'https://barida.xyz/downloads/BaridaRecipeManager-Setup.exe'
+  },
+  file_size: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
+  is_mandatory: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: false
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true,
+    defaultValue: true
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false

@@ -20,6 +20,17 @@ export default function AdminPanel() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('users');
+  
+  // Updates state
+  const [updates, setUpdates] = useState([]);
+  const [showAddUpdate, setShowAddUpdate] = useState(false);
+  const [editingUpdate, setEditingUpdate] = useState(null);
+  const [newUpdate, setNewUpdate] = useState({ 
+    version: '', 
+    note: '', 
+    is_mandatory: false, 
+    target_workspaces: [] 
+  });
 
   useEffect(() => {
     fetchData();
@@ -28,7 +39,7 @@ export default function AdminPanel() {
   }, []);
 
   const fetchData = async () => {
-    await Promise.all([fetchUsers(), fetchSystemStatus(), fetchWorkspaces()]);
+    await Promise.all([fetchUsers(), fetchSystemStatus(), fetchWorkspaces(), fetchUpdates()]);
     setLoading(false);
   };
 
@@ -47,6 +58,55 @@ export default function AdminPanel() {
       setWorkspaces(response.data);
     } catch (error) {
       console.error('Error fetching workspaces:', error);
+    }
+  };
+  
+  const fetchUpdates = async () => {
+    try {
+      const response = await api.get('/updates');
+      setUpdates(response.data);
+    } catch (error) {
+      console.error('Error fetching updates:', error);
+    }
+  };
+  
+  const handleCreateUpdate = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await api.post('/updates', {
+        ...newUpdate,
+        created_by: user?.id || 1
+      });
+      setSuccess('Güncelleme yayınlandı!');
+      setShowAddUpdate(false);
+      setNewUpdate({ version: '', note: '', is_mandatory: false, target_workspaces: [] });
+      fetchUpdates();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Güncelleme oluşturulamadı');
+    }
+  };
+  
+  const handleDeleteUpdate = async (id) => {
+    if (!window.confirm('Bu güncellemeyi silmek istediğinize emin misiniz?')) return;
+    try {
+      await api.delete(`/updates/${id}`);
+      setSuccess('Güncelleme silindi');
+      fetchUpdates();
+    } catch (error) {
+      setError('Güncelleme silinemedi');
+    }
+  };
+  
+  const handleEditUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/updates/${editingUpdate.id}`, editingUpdate);
+      setSuccess('Güncelleme düzenlendi');
+      setEditingUpdate(null);
+      fetchUpdates();
+    } catch (error) {
+      setError('Güncelleme düzenlenemedi');
     }
   };
 
@@ -313,6 +373,16 @@ export default function AdminPanel() {
               }`}
             >
               <span className="icon icon-sm">domain</span> Workspaces
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('updates')}
+              className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                activeTab === 'updates' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <span className="icon icon-sm">system_update</span> Güncellemeler
             </button>
           )}
         </div>
@@ -924,6 +994,167 @@ export default function AdminPanel() {
                 </span>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Updates Tab */}
+      {activeTab === 'updates' && (
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex justify-between items-center">
+            <h2 className="text-white font-semibold flex items-center gap-2">
+              <span className="icon icon-sm">system_update</span> Güncelleme Yönetimi
+            </h2>
+            <button
+              onClick={() => setShowAddUpdate(!showAddUpdate)}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
+            >
+              <span className="icon icon-sm">add</span> Yeni Güncelleme
+            </button>
+          </div>
+
+          {/* Add Update Form */}
+          {showAddUpdate && (
+            <div className="p-4 bg-gray-50 border-b">
+              <form onSubmit={handleCreateUpdate} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Versiyon</label>
+                    <input
+                      type="text"
+                      value={newUpdate.version}
+                      onChange={(e) => setNewUpdate({...newUpdate, version: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      placeholder="1.0.1"
+                      required
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newUpdate.is_mandatory}
+                        onChange={(e) => setNewUpdate({...newUpdate, is_mandatory: e.target.checked})}
+                        className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-700">Zorunlu Güncelleme</span>
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Güncelleme Notları</label>
+                  <textarea
+                    value={newUpdate.note}
+                    onChange={(e) => setNewUpdate({...newUpdate, note: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    rows={3}
+                    placeholder="Bu güncelleme ile eklenen özellikler..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hedef Workspace&apos;ler (boş = tümü)</label>
+                  <select
+                    multiple
+                    value={newUpdate.target_workspaces}
+                    onChange={(e) => setNewUpdate({...newUpdate, target_workspaces: Array.from(e.target.selectedOptions, o => o.value)})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    {workspaces.map(ws => (
+                      <option key={ws.id} value={ws.id}>{ws.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                    Güncelleme Yayınla
+                  </button>
+                  <button type="button" onClick={() => setShowAddUpdate(false)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition">
+                    İptal
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Updates List */}
+          <div className="divide-y">
+            {updates.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <span className="icon text-4xl mb-2">update_disabled</span>
+                <p>Henüz güncelleme yayınlanmamış</p>
+              </div>
+            ) : (
+              updates.map(update => (
+                <div key={update.id} className={`p-4 ${update.is_active ? 'bg-green-50' : 'bg-gray-50'}`}>
+                  {editingUpdate?.id === update.id ? (
+                    <form onSubmit={handleEditUpdate} className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={editingUpdate.version}
+                          onChange={(e) => setEditingUpdate({...editingUpdate, version: e.target.value})}
+                          className="px-3 py-2 border border-gray-300 rounded-lg"
+                          placeholder="Versiyon"
+                        />
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={editingUpdate.is_active}
+                            onChange={(e) => setEditingUpdate({...editingUpdate, is_active: e.target.checked})}
+                          />
+                          <span className="text-sm">Aktif</span>
+                        </label>
+                      </div>
+                      <textarea
+                        value={editingUpdate.note || ''}
+                        onChange={(e) => setEditingUpdate({...editingUpdate, note: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        rows={2}
+                      />
+                      <div className="flex gap-2">
+                        <button type="submit" className="bg-blue-600 text-white px-3 py-1 rounded text-sm">Kaydet</button>
+                        <button type="button" onClick={() => setEditingUpdate(null)} className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm">İptal</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-lg text-gray-800">v{update.version}</span>
+                          {update.is_active && (
+                            <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">AKTİF</span>
+                          )}
+                          {update.is_mandatory && (
+                            <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">ZORUNLU</span>
+                          )}
+                        </div>
+                        {update.note && (
+                          <p className="text-gray-600 text-sm mt-1">{update.note}</p>
+                        )}
+                        <p className="text-gray-400 text-xs mt-2">
+                          {new Date(update.created_at).toLocaleString('tr-TR')}
+                          {update.target_workspaces && ` • Hedef: ${JSON.parse(update.target_workspaces).length} workspace`}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingUpdate(update)}
+                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition"
+                        >
+                          <span className="icon icon-sm">edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUpdate(update.id)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition"
+                        >
+                          <span className="icon icon-sm">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

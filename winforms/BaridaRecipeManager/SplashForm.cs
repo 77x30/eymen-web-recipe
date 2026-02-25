@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Net.Http;
 using Newtonsoft.Json.Linq;
 
 namespace BaridaRecipeManager
@@ -59,47 +62,121 @@ namespace BaridaRecipeManager
         {
             try
             {
+                UpdateStatus("Güncellemeler kontrol ediliyor...");
+                
                 using (var client = new HttpClient())
                 {
-                    client.Timeout = TimeSpan.FromSeconds(5);
+                    client.Timeout = TimeSpan.FromSeconds(10);
                     
-                    // Fetch version from our API
-                    var response = await client.GetStringAsync($"{Program.API_URL}/system/version");
+                    // Check updates via API
+                    var apiUrl = $"{Program.API_URL}/api/updates/check?current_version={Program.APP_VERSION}";
+                    var response = await client.GetStringAsync(apiUrl);
                     var json = JObject.Parse(response);
                     
-                    var latestVersion = json["version"]?.ToString();
-                    var note = json["note"]?.ToString();
-                    var releasedAt = json["released_at"]?.ToString();
+                    var hasUpdate = json["hasUpdate"]?.Value<bool>() ?? false;
                     
-                    if (!string.IsNullOrEmpty(latestVersion))
+                    if (hasUpdate)
                     {
-                        Program.LatestVersion = latestVersion;
-                        Program.UpdateNote = note;
+                        var newVersion = json["version"]?.Value<string>() ?? "latest";
+                        var downloadUrl = json["download_url"]?.Value<string>() 
+                            ?? $"{Program.PRODUCTION_URL}/downloads/BaridaRecipeManager-Setup.exe";
+                        var releaseNotes = json["release_notes"]?.Value<string>() ?? "";
                         
-                        if (!string.IsNullOrEmpty(releasedAt))
-                        {
-                            Program.UpdateReleasedAt = DateTime.Parse(releasedAt);
-                        }
+                        displayVersion = newVersion;
+                        UpdateStatus($"Yeni güncelleme bulundu: v{newVersion}");
+                        await Task.Delay(800);
                         
-                        // Check if this is a new version compared to local
-                        if (latestVersion != Program.APP_VERSION)
-                        {
-                            Program.HasNewUpdate = true;
-                        }
-                        
-                        // Update display version
-                        this.Invoke((Action)(() =>
-                        {
-                            displayVersion = latestVersion;
-                            this.Invalidate();
-                        }));
+                        await DownloadAndInstallUpdate(downloadUrl, newVersion);
+                    }
+                    else
+                    {
+                        UpdateStatus("Uygulama güncel.");
                     }
                 }
             }
             catch
             {
-                // Silently ignore - use default version
+                UpdateStatus("Çevrimdışı modda başlatılıyor...");
             }
+        }
+        
+        private async Task DownloadAndInstallUpdate(string downloadUrl, string newVersion)
+        {
+            try
+            {
+                UpdateStatus("Güncelleme indiriliyor...");
+                
+                var tempPath = Path.Combine(Path.GetTempPath(), "BaridaRecipeManager-Setup.exe");
+                
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromMinutes(5);
+                    
+                    var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    
+                    var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                    var downloadedBytes = 0L;
+                    
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        var buffer = new byte[8192];
+                        int bytesRead;
+                        
+                        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            downloadedBytes += bytesRead;
+                            
+                            if (totalBytes > 0)
+                            {
+                                var percent = (int)((downloadedBytes * 100) / totalBytes);
+                                UpdateStatus($"İndiriliyor... %{percent}");
+                            }
+                        }
+                    }
+                }
+                
+                // Save installed version
+                var versionDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BaridaRecipeManager");
+                Directory.CreateDirectory(versionDir);
+                File.WriteAllText(Path.Combine(versionDir, "installed_version.txt"), newVersion);
+                
+                UpdateStatus("Güncelleme kuruluyor...");
+                await Task.Delay(500);
+                
+                // Run the installer and exit current app
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = tempPath,
+                    Arguments = "/SILENT /CLOSEAPPLICATIONS",
+                    UseShellExecute = true
+                };
+                Process.Start(startInfo);
+                
+                // Exit current application
+                Environment.Exit(0);
+            }
+            catch
+            {
+                UpdateStatus("Güncelleme indirilemedi.");
+            }
+        }
+        
+        private void UpdateStatus(string message)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke((Action)(() => UpdateStatus(message)));
+                return;
+            }
+            
+            currentMessageIndex = -1; // Custom message
+            statusMessages[0] = message;
+            this.Invalidate();
         }
 
         private void AnimationTimer_Tick(object sender, EventArgs e)

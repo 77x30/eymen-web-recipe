@@ -1,0 +1,69 @@
+name: Build and Deploy Installer
+
+on:
+  push:
+    paths:
+      - 'winforms/**'
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+    
+    - name: Restore NuGet packages
+      run: nuget restore winforms/BaridaRecipeManager/BaridaRecipeManager.csproj
+    
+    - name: Build WinForms Application
+      run: |
+        msbuild winforms/BaridaRecipeManager/BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
+    
+    - name: Download Inno Setup
+      run: |
+        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
+        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+    
+    - name: Download WebView2 Bootstrapper
+      run: |
+        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "winforms/BaridaRecipeManager/MicrosoftEdgeWebview2Setup.exe"
+    
+    - name: Build Installer
+      run: |
+        & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" winforms/BaridaRecipeManager/setup.iss
+    
+    - name: Get version from setup
+      id: version
+      run: |
+        $version = (Select-String -Path "winforms/BaridaRecipeManager/setup.iss" -Pattern '#define MyAppVersion "(.+)"').Matches.Groups[1].Value
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+    
+    - name: Copy installer to frontend downloads
+      run: |
+        Copy-Item "winforms/BaridaRecipeManager/Output/BaridaRecipeManager-Setup-*.exe" "frontend/public/downloads/BaridaRecipeManager-Setup.exe" -Force
+    
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: BaridaRecipeManager-Installer
+        path: winforms/BaridaRecipeManager/Output/*.exe
+        retention-days: 30
+    
+    - name: Commit installer to repository
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add frontend/public/downloads/BaridaRecipeManager-Setup.exe
+        git diff --staged --quiet || git commit -m "Auto-update installer to v${{ steps.version.outputs.VERSION }}"
+        git push
