@@ -12,7 +12,7 @@ namespace BaridaRecipeManager
         public const string PRODUCTION_URL = "https://barida.xyz";
         public const string API_URL = "https://barida-recipe-manager-production.up.railway.app";
         
-        // Stores the latest version info from API
+        // Store the latest version info from API
         public static string LatestVersion = APP_VERSION;
         public static string UpdateNote = null;
         public static DateTime? UpdateReleasedAt = null;
