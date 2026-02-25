@@ -245,15 +245,20 @@ namespace BaridaRecipeManager
                 Directory.CreateDirectory(versionDir);
                 File.WriteAllText(Path.Combine(versionDir, "installed_version.txt"), newVersion);
                 
-                // Create update batch script
+                // Create update batch script with retry logic
                 var currentExe = Application.ExecutablePath;
                 var batchPath = Path.Combine(Path.GetTempPath(), "barida_update.bat");
                 var batchContent = $@"@echo off
-timeout /t 2 /nobreak > nul
-copy /y ""{newExePath}"" ""{currentExe}""
+timeout /t 3 /nobreak > nul
+:retry
+copy /y ""{newExePath}"" ""{currentExe}"" >nul 2>&1
+if errorlevel 1 (
+    timeout /t 2 /nobreak > nul
+    goto retry
+)
 start """" ""{currentExe}""
-del ""{newExePath}""
-del ""%~f0""
+del ""{newExePath}"" >nul 2>&1
+del ""%~f0"" >nul 2>&1
 ";
                 File.WriteAllText(batchPath, batchContent);
                 
@@ -265,11 +270,20 @@ del ""%~f0""
                     UseShellExecute = true
                 });
                 
-                Environment.Exit(0);
+                // Dispose WebView2 to release file locks, then exit on UI thread
+                if (webView != null)
+                {
+                    try { webView.Dispose(); } catch { }
+                }
+                
+                if (this.InvokeRequired)
+                    this.BeginInvoke(new Action(() => Application.Exit()));
+                else
+                    Application.Exit();
             }
             catch
             {
-                // Ignore update errors - will retry on next heartbeat
+                isUpdating = false;
             }
         }
         
