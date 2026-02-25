@@ -25,6 +25,26 @@ export default function Login() {
   const { addToast, updateToast, removeToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [fileSize, setFileSize] = useState('~85 MB'); // Default placeholder
+
+  // Fetch actual file size on mount
+  useEffect(() => {
+    const fetchSize = async () => {
+      try {
+        const response = await fetch('/downloads/BaridaRecipeManager.exe', { method: 'HEAD' });
+        if (response.ok) {
+          const bytes = parseInt(response.headers.get('content-length') || 0);
+          if (bytes > 0) {
+            const mb = (bytes / (1024 * 1024)).toFixed(1);
+            setFileSize(`${mb} MB`);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching file size:', error);
+      }
+    };
+    fetchSize();
+  }, []);
 
   // Download launcher handler
   const handleDownloadLauncher = () => {
@@ -450,7 +470,7 @@ export default function Login() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white">
-                  {downloadStatus === 'completed' ? t('download.completed') : 
+                  {downloadStatus === 'completed' ? 'Barida.exe Ready' : 
                    downloadStatus === 'error' ? t('download.error') : 
                    t('download.inProgress')}
                 </h3>
@@ -501,7 +521,7 @@ export default function Login() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
                   <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
-                    <span className="icon text-sm">memory</span> ~85 MB
+                    <span className="icon text-sm">memory</span> {fileSize}
                   </span>
                   <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
                     <span className="icon text-sm">desktop_windows</span> Windows 10+

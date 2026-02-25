@@ -21,17 +21,35 @@ namespace BaridaRecipeManager
         [STAThread]
         static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-
-            // Show splash screen first
-            using (var splash = new SplashForm())
+            try
             {
-                splash.ShowDialog();
-            }
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                
+                // Add global exception handling
+                AppDomain.CurrentDomain.UnhandledException += (sender, args) => HandleException(args.ExceptionObject as Exception);
+                Application.ThreadException += (sender, args) => HandleException(args.Exception);
 
-            // Then show main form
-            Application.Run(new MainForm());
+                // Show splash screen first
+                using (var splash = new SplashForm())
+                {
+                    if (splash.ShowDialog() == DialogResult.OK)
+                    {
+                        // Then show main form if splash returns OK
+                        Application.Run(new MainForm());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
+        }
+
+        static void HandleException(Exception ex)
+        {
+            if (ex == null) return;
+            MessageBox.Show($"Application Error:\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }
