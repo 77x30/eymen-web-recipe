@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -106,20 +107,24 @@ namespace BaridaRecipeManager
             {
                 UpdateStatus("Güncelleme indiriliyor...");
                 
-                var tempPath = Path.Combine(Path.GetTempPath(), "BaridaRecipeManager-Setup.exe");
+                // Download zip file
+                var zipPath = Path.Combine(Path.GetTempPath(), "BaridaRecipeManager-Update.zip");
+                var extractPath = Path.Combine(Path.GetTempPath(), "BaridaRecipeManager-Update");
                 
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromMinutes(5);
                     
-                    var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                    // Download zip from production URL
+                    var zipUrl = $"{Program.PRODUCTION_URL}/downloads/BaridaRecipeManager.zip";
+                    var response = await client.GetAsync(zipUrl, HttpCompletionOption.ResponseHeadersRead);
                     response.EnsureSuccessStatusCode();
                     
                     var totalBytes = response.Content.Headers.ContentLength ?? -1;
                     var downloadedBytes = 0L;
                     
                     using (var stream = await response.Content.ReadAsStreamAsync())
-                    using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    using (var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None))
                     {
                         var buffer = new byte[8192];
                         int bytesRead;
@@ -138,6 +143,17 @@ namespace BaridaRecipeManager
                     }
                 }
                 
+                UpdateStatus("Güncelleme hazırlanıyor...");
+                
+                // Clean up old extract folder
+                if (Directory.Exists(extractPath))
+                {
+                    Directory.Delete(extractPath, true);
+                }
+                
+                // Extract zip
+                ZipFile.ExtractToDirectory(zipPath, extractPath);
+                
                 // Save installed version
                 var versionDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -145,14 +161,29 @@ namespace BaridaRecipeManager
                 Directory.CreateDirectory(versionDir);
                 File.WriteAllText(Path.Combine(versionDir, "installed_version.txt"), newVersion);
                 
-                UpdateStatus("Güncelleme kuruluyor...");
+                UpdateStatus("Güncelleme başlatılıyor...");
                 await Task.Delay(500);
                 
-                // Run the installer and exit current app
+                // Create update batch script
+                var currentExe = Application.ExecutablePath;
+                var currentDir = Path.GetDirectoryName(currentExe);
+                var newExe = Path.Combine(extractPath, "BaridaRecipeManager.exe");
+                var batchPath = Path.Combine(Path.GetTempPath(), "barida_update.bat");
+                
+                var batchContent = $@"@echo off
+timeout /t 2 /nobreak > nul
+xcopy /s /y ""{extractPath}\*"" ""{currentDir}""
+start """" ""{currentExe}""
+del ""%~f0""
+";
+                File.WriteAllText(batchPath, batchContent);
+                
+                // Run batch and exit
                 var startInfo = new ProcessStartInfo
                 {
-                    FileName = tempPath,
-                    Arguments = "/SILENT /CLOSEAPPLICATIONS",
+                    FileName = batchPath,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
                     UseShellExecute = true
                 };
                 Process.Start(startInfo);

@@ -1,4 +1,4 @@
-name: Build and Deploy Installer
+name: Build and Deploy App
 
 on:
   push:
@@ -31,36 +31,53 @@ jobs:
       working-directory: winforms/BaridaRecipeManager
       run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
     
-    - name: Download WebView2 Bootstrapper
-      run: |
-        Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "winforms/BaridaRecipeManager/MicrosoftEdgeWebview2Setup.exe"
-    
-    - name: Build Installer with Inno Setup
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
-      with:
-        path: winforms/BaridaRecipeManager/setup.iss
-    
-    - name: Get version from setup
+    - name: Get version
       id: version
       run: |
-        $version = (Select-String -Path "winforms/BaridaRecipeManager/setup.iss" -Pattern '#define MyAppVersion "(.+)"').Matches.Groups[1].Value
+        $version = (Select-String -Path "winforms/BaridaRecipeManager/Program.cs" -Pattern 'APP_VERSION = "(.+)"').Matches.Groups[1].Value
         echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
     
-    - name: Copy installer to frontend downloads
+    - name: Create release package
+      working-directory: winforms/BaridaRecipeManager/bin/Release
       run: |
-        Copy-Item "winforms/BaridaRecipeManager/Output/BaridaRecipeManager-Setup-*.exe" "frontend/public/downloads/BaridaRecipeManager-Setup.exe" -Force
+        # Remove unnecessary files
+        Remove-Item -Path "*.pdb" -ErrorAction SilentlyContinue
+        Remove-Item -Path "*.xml" -ErrorAction SilentlyContinue
+        Remove-Item -Path "*.config" -ErrorAction SilentlyContinue
+        Remove-Item -Path "*.manifest" -ErrorAction SilentlyContinue
+        Remove-Item -Path "*.application" -ErrorAction SilentlyContinue
+        Remove-Item -Path "app.publish" -Recurse -ErrorAction SilentlyContinue
+        
+        # Create zip
+        Compress-Archive -Path "*" -DestinationPath "BaridaRecipeManager.zip" -Force
+        
+        # List contents
+        Get-ChildItem
     
-    - name: Upload Installer Artifact
+    - name: Copy to frontend downloads
+      run: |
+        # Ensure downloads folder exists
+        New-Item -ItemType Directory -Path "frontend/public/downloads" -Force | Out-Null
+        
+        # Copy zip
+        Copy-Item "winforms/BaridaRecipeManager/bin/Release/BaridaRecipeManager.zip" "frontend/public/downloads/BaridaRecipeManager.zip" -Force
+        
+        # Also copy standalone exe for quick access
+        Copy-Item "winforms/BaridaRecipeManager/bin/Release/BaridaRecipeManager.exe" "frontend/public/downloads/BaridaRecipeManager.exe" -Force
+    
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: BaridaRecipeManager-Installer
-        path: winforms/BaridaRecipeManager/Output/*.exe
+        name: BaridaRecipeManager-v${{ steps.version.outputs.VERSION }}
+        path: winforms/BaridaRecipeManager/bin/Release/BaridaRecipeManager.zip
         retention-days: 30
     
-    - name: Commit installer to repository
+    - name: Commit to repository
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add frontend/public/downloads/BaridaRecipeManager-Setup.exe
-        git diff --staged --quiet || git commit -m "Auto-update installer to v${{ steps.version.outputs.VERSION }}"
+        git add frontend/public/downloads/BaridaRecipeManager.zip
+        git add frontend/public/downloads/BaridaRecipeManager.exe
+        git diff --staged --quiet || git commit -m "Auto-update app to v${{ steps.version.outputs.VERSION }}"
         git push
