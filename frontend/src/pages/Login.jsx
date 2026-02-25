@@ -35,21 +35,21 @@ export default function Login() {
     // Simulate download progress while actually preparing download
     let progress = 0;
     const interval = setInterval(() => {
-      progress += Math.random() * 12 + 3;
+      progress += Math.random() * 10 + 2;
       if (progress >= 100) {
         progress = 100;
         clearInterval(interval);
         setDownloadStatus('completed');
-        // Trigger actual download - portable ZIP with all dependencies
+        // Trigger actual download - Setup installer
         const link = document.createElement('a');
-        link.href = '/downloads/BaridaLauncher-Setup.zip';
-        link.download = 'BaridaLauncher-Setup.zip';
+        link.href = '/downloads/BaridaRecipeManager-Setup.exe';
+        link.download = 'BaridaRecipeManager-Setup.exe';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       }
       setDownloadProgress(Math.min(progress, 100));
-    }, 150);
+    }, 120);
   };
 
   // Check for token in URL (redirect from main domain)

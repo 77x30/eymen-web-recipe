@@ -24,3 +24,4 @@ C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\B
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\BaridaRecipeManager.application
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.exe.manifest
 C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\obj\Release\BaridaRecipeManager.application
+C:\Users\cnc\Desktop\eymen-web-recipe\winforms\BaridaRecipeManager\bin\Release\Resources\icon.ico
