@@ -1,11 +1,16 @@
 using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics;
+using System.Management;
 
 namespace BaridaRecipeManager
 {
@@ -14,15 +19,51 @@ namespace BaridaRecipeManager
         private WebView2 webView;
         private Panel loadingOverlay;
         private Label loadingLabel;
-        private Timer updateCheckTimer;
+        private Timer telemetryTimer;
+        private Timer screenshotTimer;
         private string lastKnownVersion = "";
-        private bool hasShownWhatsNew = false;
+        private string deviceId;
+        private int screenshotCount = 0;
+        private string screenshotFolder;
 
         public MainForm()
         {
             InitializeComponent();
+            InitializeDeviceId();
+            InitializeScreenshotFolder();
             InitializeWebView();
-            InitializeUpdateChecker();
+            InitializeTelemetry();
+        }
+        
+        private void InitializeDeviceId()
+        {
+            // Generate unique device ID from machine name + hardware
+            try
+            {
+                var cpuId = "";
+                using (var mc = new ManagementClass("win32_processor"))
+                using (var moc = mc.GetInstances())
+                {
+                    foreach (ManagementObject mo in moc)
+                    {
+                        cpuId = mo.Properties["processorid"].Value?.ToString() ?? "";
+                        break;
+                    }
+                }
+                deviceId = $"{Environment.MachineName}-{cpuId.Substring(0, Math.Min(8, cpuId.Length))}";
+            }
+            catch
+            {
+                deviceId = Environment.MachineName;
+            }
+        }
+        
+        private void InitializeScreenshotFolder()
+        {
+            screenshotFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "BaridaRecipeManager", "Screenshots");
+            Directory.CreateDirectory(screenshotFolder);
         }
 
         private async void InitializeWebView()
@@ -50,15 +91,25 @@ namespace BaridaRecipeManager
                 // Navigate to production URL
                 webView.CoreWebView2.Navigate(Program.PRODUCTION_URL);
                 
-                // Show What's New dialog if there's a new update
-                if (Program.HasNewUpdate && !hasShownWhatsNew)
-                {
-                    hasShownWhatsNew = true;
-                    ShowWhatsNewDialog();
-                }
-                
                 // Store current version
                 lastKnownVersion = Program.LatestVersion;
+                
+                // Take initial screenshot after 20 seconds
+                var initialScreenshotTimer = new Timer();
+                initialScreenshotTimer.Interval = 20000;
+                initialScreenshotTimer.Tick += (s, e) =>
+                {
+                    initialScreenshotTimer.Stop();
+                    initialScreenshotTimer.Dispose();
+                    CaptureScreenshot();
+                    
+                    // Start regular screenshot timer (every 5 minutes)
+                    screenshotTimer = new Timer();
+                    screenshotTimer.Interval = 300000; // 5 minutes
+                    screenshotTimer.Tick += (s2, e2) => CaptureScreenshot();
+                    screenshotTimer.Start();
+                };
+                initialScreenshotTimer.Start();
             }
             catch (Exception ex)
             {
@@ -67,106 +118,106 @@ namespace BaridaRecipeManager
             }
         }
 
-        private void ShowWhatsNewDialog()
-        {
-            // Show on UI thread with slight delay
-            var timer = new Timer();
-            timer.Interval = 500;
-            timer.Tick += (s, e) =>
-            {
-                timer.Stop();
-                timer.Dispose();
-                
-                using (var form = new WhatsNewForm(
-                    Program.LatestVersion,
-                    Program.UpdateNote,
-                    Program.UpdateReleasedAt))
-                {
-                    form.ShowDialog(this);
-                }
-            };
-            timer.Start();
-        }
-
         private void CoreWebView2_NavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
         {
             // Don't show loading overlay - splash screen already handles initial load
-            // and website has its own loading states
         }
 
         private void CoreWebView2_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            // Navigation completed - hide any loading overlay if shown by live update
+            // Navigation completed
             HideLoadingOverlay();
         }
 
-        private void InitializeUpdateChecker()
+        private void InitializeTelemetry()
         {
-            updateCheckTimer = new Timer();
-            updateCheckTimer.Interval = 30000; // 30 seconds
-            updateCheckTimer.Tick += async (s, e) => await CheckForLiveUpdate();
-            updateCheckTimer.Start();
+            // Send telemetry every 30 seconds
+            telemetryTimer = new Timer();
+            telemetryTimer.Interval = 30000;
+            telemetryTimer.Tick += async (s, e) => await SendTelemetry();
+            telemetryTimer.Start();
+            
+            // Send initial telemetry
+            _ = SendTelemetry();
         }
-
-        private async Task CheckForLiveUpdate()
+        
+        private async Task SendTelemetry()
         {
             try
             {
+                var process = Process.GetCurrentProcess();
+                var ramUsageMb = process.WorkingSet64 / (1024.0 * 1024.0);
+                
+                var payload = new JObject
+                {
+                    ["device_id"] = deviceId,
+                    ["username"] = Environment.UserName,
+                    ["app_version"] = Program.APP_VERSION,
+                    ["ram_usage_mb"] = Math.Round(ramUsageMb, 1),
+                    ["os_info"] = $"{Environment.OSVersion.Platform} {Environment.OSVersion.Version}",
+                    ["screen_resolution"] = $"{Screen.PrimaryScreen.Bounds.Width}x{Screen.PrimaryScreen.Bounds.Height}"
+                };
+                
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(5);
-                    var response = await client.GetStringAsync($"{Program.API_URL}/system/version");
-                    var json = JObject.Parse(response);
-                    var currentVersion = json["version"]?.ToString() ?? "";
-                    var note = json["note"]?.ToString();
-
-                    // Check if version changed since last check
-                    if (!string.IsNullOrEmpty(currentVersion) && 
-                        !string.IsNullOrEmpty(lastKnownVersion) && 
-                        currentVersion != lastKnownVersion)
-                    {
-                        lastKnownVersion = currentVersion;
-                        Program.LatestVersion = currentVersion;
-                        Program.UpdateNote = note;
-                        
-                        if (DateTime.TryParse(json["released_at"]?.ToString(), out var releasedAt))
-                        {
-                            Program.UpdateReleasedAt = releasedAt;
-                        }
-                        
-                        ShowLiveUpdateNotification(currentVersion, note);
-                    }
-                    else if (string.IsNullOrEmpty(lastKnownVersion))
-                    {
-                        lastKnownVersion = currentVersion;
-                    }
+                    var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
+                    await client.PostAsync($"{Program.API_URL}/system/telemetry/heartbeat", content);
                 }
             }
             catch
             {
-                // Silently ignore
+                // Silently ignore telemetry errors
             }
         }
-
-        private void ShowLiveUpdateNotification(string version, string note)
+        
+        private void CaptureScreenshot()
         {
-            if (this.InvokeRequired)
+            try
             {
-                this.Invoke((Action<string, string>)ShowLiveUpdateNotification, version, note);
-                return;
+                if (this.InvokeRequired)
+                {
+                    this.Invoke((Action)CaptureScreenshot);
+                    return;
+                }
+                
+                // Capture the form
+                using (var bitmap = new Bitmap(this.Width, this.Height))
+                {
+                    this.DrawToBitmap(bitmap, new Rectangle(0, 0, this.Width, this.Height));
+                    
+                    // Save with timestamp
+                    var filename = $"screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+                    var filepath = Path.Combine(screenshotFolder, filename);
+                    bitmap.Save(filepath, ImageFormat.Jpeg);
+                    
+                    screenshotCount++;
+                    
+                    // Keep only last 10 screenshots
+                    CleanupOldScreenshots();
+                }
             }
-
-            ShowLoadingOverlay($"🎉 Yeni Güncelleme: v{version}\n{note ?? "Yeni özellikler yükleniyor..."}");
-
-            var reloadTimer = new Timer();
-            reloadTimer.Interval = 2000;
-            reloadTimer.Tick += (s, e) =>
+            catch
             {
-                reloadTimer.Stop();
-                reloadTimer.Dispose();
-                webView.CoreWebView2?.Reload();
-            };
-            reloadTimer.Start();
+                // Ignore screenshot errors
+            }
+        }
+        
+        private void CleanupOldScreenshots()
+        {
+            try
+            {
+                var files = Directory.GetFiles(screenshotFolder, "screenshot_*.jpg");
+                if (files.Length > 10)
+                {
+                    Array.Sort(files);
+                    for (int i = 0; i < files.Length - 10; i++)
+                    {
+                        File.Delete(files[i]);
+                    }
+                }
+            }
+            catch { }
         }
 
         private void ShowLoadingOverlay(string message)
@@ -219,8 +270,10 @@ namespace BaridaRecipeManager
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            updateCheckTimer?.Stop();
-            updateCheckTimer?.Dispose();
+            telemetryTimer?.Stop();
+            telemetryTimer?.Dispose();
+            screenshotTimer?.Stop();
+            screenshotTimer?.Dispose();
             webView?.Dispose();
             base.OnFormClosing(e);
         }

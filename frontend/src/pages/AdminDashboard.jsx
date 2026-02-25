@@ -128,6 +128,7 @@ export default function AdminDashboard() {
         workspace_ids: updateTarget === 'workspace' ? selectedWorkspaces : null
       });
       
+      removeToast(toastId);
       addToast(`v${updateVersion} ${t('admin.publishedSuccessfully')}`, 'success', 4000);
       setUpdateNote('');
       setUpdateVersion('');
@@ -137,9 +138,22 @@ export default function AdminDashboard() {
       fetchData();
     } catch (error) {
       console.error('Error publishing update:', error);
+      removeToast(toastId);
       addToast('Güncelleme yayınlanamadı: ' + (error.response?.data?.error || error.message), 'error', 5000);
     } finally {
       setPublishing(false);
+    }
+  };
+  
+  const handleDeleteUpdate = async (updateId) => {
+    if (!window.confirm(t('admin.confirmDeleteUpdate'))) return;
+    
+    try {
+      await api.delete(`/system/updates/${updateId}`);
+      addToast(t('admin.updateDeleted'), 'success', 3000);
+      fetchData();
+    } catch (error) {
+      addToast('Güncelleme silinemedi', 'error', 3000);
     }
   };
 
@@ -485,14 +499,31 @@ export default function AdminDashboard() {
                 <div key={update.id} className={`p-3 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg border-l-4 border-green-500`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>v{update.version}</span>
-                    <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {new Date(update.created_at).toLocaleDateString('tr-TR')} {new Date(update.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {new Date(update.created_at).toLocaleDateString('tr-TR')} {new Date(update.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteUpdate(update.id)}
+                        className="p-1 text-red-400 hover:text-red-600 hover:bg-red-100 rounded transition"
+                        title={t('common.delete')}
+                      >
+                        <span className="icon icon-sm">delete</span>
+                      </button>
+                    </div>
                   </div>
                   <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{update.note || t('admin.noDescription')}</p>
-                  <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
-                    {t('admin.publishedBy')} {update.creator?.username || 'Admin'}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {t('admin.publishedBy')} {update.creator?.username || 'Admin'}
+                    </p>
+                    {update.target_workspaces && (
+                      <span className={`text-xs px-2 py-0.5 rounded ${isDark ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-600'}`}>
+                        <span className="icon icon-sm mr-1">domain</span>
+                        {t('admin.workspaceUpdate')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

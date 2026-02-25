@@ -45,6 +45,20 @@ router.post('/updates', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// Delete update (admin only)
+router.delete('/updates/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const update = await SystemUpdate.findByPk(req.params.id);
+    if (!update) {
+      return res.status(404).json({ error: 'Update not found' });
+    }
+    await update.destroy();
+    res.json({ message: 'Update deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get telemetry overview (admin only)
 router.get('/telemetry', authenticate, authorize('admin'), async (req, res) => {
   try {
