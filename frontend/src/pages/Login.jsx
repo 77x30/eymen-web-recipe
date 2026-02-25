@@ -40,10 +40,10 @@ export default function Login() {
         progress = 100;
         clearInterval(interval);
         setDownloadStatus('completed');
-        // Trigger actual download - direct zip
+        // Trigger actual download - single exe
         const link = document.createElement('a');
-        link.href = '/downloads/BaridaRecipeManager.zip';
-        link.download = 'BaridaRecipeManager.zip';
+        link.href = '/downloads/BaridaRecipeManager.exe';
+        link.download = 'BaridaRecipeManager.exe';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
