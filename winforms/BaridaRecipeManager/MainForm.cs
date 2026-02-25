@@ -75,8 +75,16 @@ namespace BaridaRecipeManager
 
             try
             {
-                // Initialize WebView2
-                var env = await CoreWebView2Environment.CreateAsync();
+                // Set WebView2 user data folder to LocalAppData (writable location)
+                var userDataFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BaridaRecipeManager", "WebView2Data");
+                
+                // Ensure directory exists
+                Directory.CreateDirectory(userDataFolder);
+                
+                // Initialize WebView2 with custom user data folder
+                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
                 await webView.EnsureCoreWebView2Async(env);
 
                 // Configure settings

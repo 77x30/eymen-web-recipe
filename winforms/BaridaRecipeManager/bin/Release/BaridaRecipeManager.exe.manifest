@@ -43,14 +43,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="BaridaRecipeManager.exe" size="33240">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="BaridaRecipeManager.exe" size="70104">
       <assemblyIdentity name="BaridaRecipeManager" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>lM7MLMLtS8sLTYXL6K+/HgD/tG8jTNkHnlt+7Px+lEg=</dsig:DigestValue>
+        <dsig:DigestValue>z4eMcqilQMk5E2LpFLH3Xx+EMzdZJb6+B8AX7NpAi4w=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
@@ -102,13 +102,13 @@
       </hash>
     </dependentAssembly>
   </dependency>
-  <file name="Resources\icon.ico" size="4286">
+  <file name="Resources\icon.ico" size="41086">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
       <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-      <dsig:DigestValue>pzD0M8fkQD8J/Gx/iSCNtJXiLlCGzm0sh2hxVMgk5CQ=</dsig:DigestValue>
+      <dsig:DigestValue>Bit5xZa/RMTuMpeZ71lMg00mEi6nx2lC6C+BTVEhCkg=</dsig:DigestValue>
     </hash>
   </file>
   <file name="runtimes\win-arm64\native\WebView2Loader.dll" size="140352">
