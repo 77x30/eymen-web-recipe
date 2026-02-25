@@ -29,16 +29,14 @@ jobs:
       working-directory: winforms/BaridaRecipeManager
       run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
     
-    - name: Setup Inno Setup
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
-    
     - name: Download WebView2 Bootstrapper
       run: |
         Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "winforms/BaridaRecipeManager/MicrosoftEdgeWebview2Setup.exe"
     
-    - name: Build Installer
-      run: |
-        iscc winforms/BaridaRecipeManager/setup.iss
+    - name: Build Installer with Inno Setup
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
+      with:
+        path: winforms/BaridaRecipeManager/setup.iss
     
     - name: Get version from setup
       id: version
