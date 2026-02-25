@@ -25,19 +25,35 @@ jobs:
     
     - name: Restore NuGet packages
       working-directory: winforms/BaridaRecipeManager
-      run: |
-        nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
-        echo "=== Packages directory contents ==="
-        Get-ChildItem ../packages -Directory | Select-Object Name
-        echo "=== Costura.Fody check ==="
-        if (Test-Path "../packages/Costura.Fody.5.7.0") { echo "Costura.Fody found" } else { echo "Costura.Fody NOT found!" }
+      run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
     
     - name: Build WinForms Application
       working-directory: winforms/BaridaRecipeManager
       run: |
         $solutionDir = (Resolve-Path "..").Path + "\"
-        echo "SolutionDir: $solutionDir"
-        msbuild BaridaRecipeManager.csproj /p:Configuration=Release "/p:SolutionDir=$solutionDir" /t:Rebuild /v:detailed 2>&1 | Select-String -Pattern "Fody|Costura|weaver|error" | Select-Object -First 30
+        msbuild BaridaRecipeManager.csproj /p:Configuration=Release "/p:SolutionDir=$solutionDir" /t:Rebuild
+    
+    - name: Merge DLLs into single EXE with ILRepack
+      working-directory: winforms/BaridaRecipeManager
+      run: |
+        $ilrepack = (Resolve-Path "../packages/ILRepack.2.0.34/tools/ILRepack.exe").Path
+        $releaseDir = "bin/Release"
+        $outputExe = "$releaseDir/BaridaRecipeManager-merged.exe"
+        
+        # Merge all managed DLLs into single EXE
+        & $ilrepack /out:$outputExe /target:winexe `
+          "$releaseDir/BaridaRecipeManager.exe" `
+          "$releaseDir/Newtonsoft.Json.dll" `
+          "$releaseDir/Microsoft.Web.WebView2.Core.dll" `
+          "$releaseDir/Microsoft.Web.WebView2.WinForms.dll" `
+          "$releaseDir/Microsoft.Web.WebView2.Wpf.dll"
+        
+        # Replace original with merged
+        Copy-Item $outputExe "$releaseDir/BaridaRecipeManager.exe" -Force
+        Remove-Item $outputExe
+        
+        $size = (Get-Item "$releaseDir/BaridaRecipeManager.exe").Length / 1MB
+        echo "Merged EXE size: $([math]::Round($size, 2)) MB"
     
     - name: Get version
       id: version
@@ -48,20 +64,15 @@ jobs:
     
     - name: Copy exe to frontend downloads
       run: |
-        # Ensure downloads folder exists
         New-Item -ItemType Directory -Path "frontend/public/downloads" -Force | Out-Null
-        
-        # Copy single exe (Costura.Fody embeds all DLLs)
         Copy-Item "winforms/BaridaRecipeManager/bin/Release/BaridaRecipeManager.exe" "frontend/public/downloads/BaridaRecipeManager.exe" -Force
         
-        # Show file size and verify Costura embedded DLLs
         $size = (Get-Item "frontend/public/downloads/BaridaRecipeManager.exe").Length / 1MB
         echo "Exe size: $([math]::Round($size, 2)) MB"
         
         if ($size -lt 1) {
-          echo "::warning::EXE is smaller than 1 MB - Costura.Fody may not have embedded DLLs!"
-          # List bin/Release contents for debugging
-          Get-ChildItem "winforms/BaridaRecipeManager/bin/Release/" -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
+          echo "::error::EXE is smaller than 1 MB - DLLs were not merged!"
+          exit 1
         }
     
     - name: Upload Artifact
