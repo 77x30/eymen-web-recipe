@@ -128,7 +128,6 @@ export default function AdminDashboard() {
         workspace_ids: updateTarget === 'workspace' ? selectedWorkspaces : null
       });
       
-      removeToast(toastId);
       addToast(`v${updateVersion} ${t('admin.publishedSuccessfully')}`, 'success', 4000);
       setUpdateNote('');
       setUpdateVersion('');
@@ -138,9 +137,9 @@ export default function AdminDashboard() {
       fetchData();
     } catch (error) {
       console.error('Error publishing update:', error);
-      removeToast(toastId);
       addToast('Güncelleme yayınlanamadı: ' + (error.response?.data?.error || error.message), 'error', 5000);
     } finally {
+      removeToast(toastId);
       setPublishing(false);
     }
   };
