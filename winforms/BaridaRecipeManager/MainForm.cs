@@ -160,7 +160,7 @@ namespace BaridaRecipeManager
                 {
                     ["device_id"] = deviceId,
                     ["username"] = Environment.UserName,
-                    ["app_version"] = Program.APP_VERSION,
+                    ["app_version"] = Program.GetEffectiveVersion(),
                     ["ram_usage_mb"] = Math.Round(ramUsageMb, 1),
                     ["os_info"] = $"{Environment.OSVersion.Platform} {Environment.OSVersion.Version}",
                     ["screen_resolution"] = $"{Screen.PrimaryScreen.Bounds.Width}x{Screen.PrimaryScreen.Bounds.Height}"
@@ -170,12 +170,90 @@ namespace BaridaRecipeManager
                 {
                     client.Timeout = TimeSpan.FromSeconds(5);
                     var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
-                    await client.PostAsync($"{Program.API_URL}/system/telemetry/heartbeat", content);
+                    var response = await client.PostAsync($"{Program.API_URL}/api/system/telemetry/heartbeat", content);
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        var json = JObject.Parse(responseBody);
+                        var latestUpdate = json["latest_update"];
+                        
+                        if (latestUpdate != null && latestUpdate.Type != JTokenType.Null)
+                        {
+                            var serverVersion = latestUpdate["version"]?.Value<string>();
+                            var currentVersion = Program.GetEffectiveVersion();
+                            
+                            if (!string.IsNullOrEmpty(serverVersion) && serverVersion != currentVersion)
+                            {
+                                // New update available - download and install
+                                Program.LatestVersion = serverVersion;
+                                Program.HasNewUpdate = true;
+                                Program.UpdateNote = latestUpdate["note"]?.Value<string>();
+                                
+                                await DownloadAndApplyUpdate(serverVersion);
+                            }
+                        }
+                    }
                 }
             }
             catch
             {
                 // Silently ignore telemetry errors
+            }
+        }
+        
+        private async Task DownloadAndApplyUpdate(string newVersion)
+        {
+            try
+            {
+                var newExePath = Path.Combine(Path.GetTempPath(), "BaridaRecipeManager_new.exe");
+                
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromMinutes(5);
+                    var exeUrl = $"{Program.PRODUCTION_URL}/downloads/BaridaRecipeManager.exe";
+                    var response = await client.GetAsync(exeUrl);
+                    response.EnsureSuccessStatusCode();
+                    
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    using (var fs = new FileStream(newExePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        await stream.CopyToAsync(fs);
+                    }
+                }
+                
+                // Save installed version
+                var versionDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BaridaRecipeManager");
+                Directory.CreateDirectory(versionDir);
+                File.WriteAllText(Path.Combine(versionDir, "installed_version.txt"), newVersion);
+                
+                // Create update batch script
+                var currentExe = Application.ExecutablePath;
+                var batchPath = Path.Combine(Path.GetTempPath(), "barida_update.bat");
+                var batchContent = $@"@echo off
+timeout /t 2 /nobreak > nul
+copy /y ""{newExePath}"" ""{currentExe}""
+start """" ""{currentExe}""
+del ""{newExePath}""
+del ""%~f0""
+";
+                File.WriteAllText(batchPath, batchContent);
+                
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = batchPath,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = true
+                });
+                
+                Environment.Exit(0);
+            }
+            catch
+            {
+                // Ignore update errors - will retry on next heartbeat
             }
         }
         
@@ -203,11 +281,39 @@ namespace BaridaRecipeManager
                     
                     // Keep only last 10 screenshots
                     CleanupOldScreenshots();
+                    
+                    // Upload to server
+                    _ = UploadScreenshot(filepath);
                 }
             }
             catch
             {
                 // Ignore screenshot errors
+            }
+        }
+        
+        private async Task UploadScreenshot(string filepath)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.Timeout = TimeSpan.FromSeconds(15);
+                    using (var form = new MultipartFormDataContent())
+                    {
+                        var fileBytes = File.ReadAllBytes(filepath);
+                        var fileContent = new ByteArrayContent(fileBytes);
+                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+                        form.Add(fileContent, "screenshot", "screenshot.jpg");
+                        form.Add(new StringContent(deviceId), "device_id");
+                        
+                        await client.PostAsync($"{Program.API_URL}/api/system/telemetry/screenshot", form);
+                    }
+                }
+            }
+            catch
+            {
+                // Silently ignore upload errors
             }
         }
         

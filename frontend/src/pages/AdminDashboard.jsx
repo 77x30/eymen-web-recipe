@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [commits, setCommits] = useState([]);
   const [loadingCommits, setLoadingCommits] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
 
   // Chart colors for dark/light mode
   const chartBg = isDark ? '#1f2937' : '#ffffff';
@@ -631,22 +632,38 @@ export default function AdminDashboard() {
               
               {/* Connected Clients List */}
               {telemetry.clients.length > 0 && (
-                <div className="max-h-48 overflow-y-auto">
+                <div>
                   <p className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>{t('admin.connectedClients')}</p>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
                     {telemetry.clients.slice(0, 10).map((client, idx) => (
-                      <div key={idx} className={`flex items-center justify-between p-2 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg text-sm`}>
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${
-                            client.status === 'online' ? 'bg-green-500' :
-                            client.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'
-                          }`}></span>
-                          <span className={`font-medium ${isDark ? 'text-white' : ''}`}>{client.username || t('admin.anonymous')}</span>
-                          <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>({client.workspace})</span>
+                      <div key={idx} className={`p-3 ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg text-sm`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${
+                              client.status === 'online' ? 'bg-green-500' :
+                              client.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'
+                            }`}></span>
+                            <span className={`font-medium ${isDark ? 'text-white' : ''}`}>{client.username || t('admin.anonymous')}</span>
+                            <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>({client.workspace})</span>
+                          </div>
+                          <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} flex items-center gap-3`}>
+                            <span>{client.ram_usage_mb?.toFixed(0)} MB</span>
+                            <span className="text-xs">v{client.app_version}</span>
+                            {client.screenshot_url && (
+                              <button
+                                onClick={() => setSelectedScreenshot(client.screenshot_url)}
+                                className="text-blue-400 hover:text-blue-300 transition"
+                                title={locale === 'tr' ? 'Ekran görüntüsü' : 'Screenshot'}
+                              >
+                                <span className="icon icon-sm">screenshot_monitor</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} flex items-center gap-3`}>
-                          <span>{client.ram_usage_mb?.toFixed(0)} MB</span>
-                          <span className="text-xs">v{client.app_version}</span>
+                        <div className={`flex items-center gap-3 mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <span>{client.os_info}</span>
+                          <span>{client.screen_resolution}</span>
+                          <span>{client.device_id}</span>
                         </div>
                       </div>
                     ))}
@@ -894,6 +911,26 @@ export default function AdminDashboard() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screenshot Modal */}
+      {selectedScreenshot && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedScreenshot(null)}>
+          <div className={`relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                <span className="icon icon-sm mr-2">screenshot_monitor</span>
+                {locale === 'tr' ? 'Ekran Görüntüsü' : 'Screenshot'}
+              </h3>
+              <button onClick={() => setSelectedScreenshot(null)} className={`p-1 rounded-lg hover:bg-gray-700 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className="icon">close</span>
+              </button>
+            </div>
+            <div className="p-2">
+              <img src={selectedScreenshot} alt="Client Screenshot" className="w-full h-auto rounded-lg" />
             </div>
           </div>
         </div>

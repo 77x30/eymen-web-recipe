@@ -3,6 +3,35 @@ const router = express.Router();
 const { SystemUpdate, AppTelemetry, User, Workspace } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Screenshot upload storage
+const screenshotDir = path.join(__dirname, '../../uploads/screenshots');
+if (!fs.existsSync(screenshotDir)) {
+  fs.mkdirSync(screenshotDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, screenshotDir),
+  filename: (req, file, cb) => {
+    const deviceId = req.body.device_id || 'unknown';
+    const safeId = deviceId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    cb(null, `${safeId}_latest.jpg`);
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } });
+
+// Serve screenshots
+router.get('/screenshots/:filename', authenticate, authorize('admin'), (req, res) => {
+  const filepath = path.join(screenshotDir, req.params.filename);
+  if (fs.existsSync(filepath)) {
+    res.sendFile(filepath);
+  } else {
+    res.status(404).json({ error: 'Screenshot not found' });
+  }
+});
 
 // Get all system updates (admin only)
 router.get('/updates', authenticate, authorize('admin'), async (req, res) => {
@@ -110,9 +139,31 @@ router.get('/telemetry', authenticate, authorize('admin'), async (req, res) => {
         status: new Date(t.last_ping) > oneMinuteAgo ? 'online' : 
                 new Date(t.last_ping) > fiveMinutesAgo ? 'idle' : 'offline',
         last_ping: t.last_ping,
-        first_seen: t.first_seen
+        first_seen: t.first_seen,
+        screenshot_url: t.screenshot_url
       }))
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Screenshot upload endpoint (from WinForms apps, no auth)
+router.post('/telemetry/screenshot', upload.single('screenshot'), async (req, res) => {
+  try {
+    const { device_id } = req.body;
+    if (!device_id || !req.file) {
+      return res.status(400).json({ error: 'device_id and screenshot file required' });
+    }
+    
+    const screenshotUrl = `/api/system/screenshots/${req.file.filename}`;
+    
+    await AppTelemetry.update(
+      { screenshot_url: screenshotUrl },
+      { where: { device_id } }
+    );
+    
+    res.json({ status: 'ok', screenshot_url: screenshotUrl });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

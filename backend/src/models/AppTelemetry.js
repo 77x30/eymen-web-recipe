@@ -40,6 +40,10 @@ const AppTelemetry = sequelize.define('AppTelemetry', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  screenshot_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
   status: {
     type: DataTypes.ENUM('online', 'idle', 'offline'),
     defaultValue: 'online'
