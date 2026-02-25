@@ -4,6 +4,8 @@ import { useWorkspace } from './context/WorkspaceContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AnalysisDashboard from './pages/AnalysisDashboard';
+import MonitoringDashboard from './pages/MonitoringDashboard';
 import RecipeManager from './pages/RecipeManager';
 import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
@@ -113,6 +115,8 @@ function App() {
           </PrivateRoute>
         }>
           <Route index element={<AdminDashboard />} />
+          <Route path="analysis" element={<AnalysisDashboard />} />
+          <Route path="monitoring" element={<MonitoringDashboard />} />
           <Route path="workspaces" element={<AdminPanel />} />
           <Route path="users" element={<AdminPanel />} />
         </Route>

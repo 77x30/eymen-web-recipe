@@ -9,7 +9,7 @@ import SettingsModal from './SettingsModal';
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const { isDark } = useTheme();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { version } = useVersion();
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,6 +48,26 @@ export default function AdminLayout() {
                 }`}
               >
                 <span className="icon icon-sm">dashboard</span> {t('nav.dashboard')}
+              </Link>
+              <Link 
+                to="/analysis" 
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  isActive('/analysis')
+                    ? 'bg-red-600 text-white' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span className="icon icon-sm">analytics</span> {locale === 'tr' ? 'Analiz' : 'Analysis'}
+              </Link>
+              <Link 
+                to="/monitoring" 
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  isActive('/monitoring')
+                    ? 'bg-red-600 text-white' 
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span className="icon icon-sm">monitor_heart</span> {locale === 'tr' ? 'İzleme' : 'Monitoring'}
               </Link>
               <Link 
                 to="/workspaces" 
