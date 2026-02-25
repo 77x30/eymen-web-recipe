@@ -32,15 +32,13 @@ router.post('/updates', authenticate, authorize('admin'), async (req, res) => {
       version: version || '1.0.0',
       note,
       target_workspaces: targetWorkspaces,
-      created_by: req.user.id
+      created_by: req.user.id,
+      is_active: true
     });
     
-    const updateWithCreator = await SystemUpdate.findByPk(update.id, {
-      include: [{ model: User, as: 'creator', attributes: ['id', 'username'] }]
-    });
-    
-    res.status(201).json(updateWithCreator);
+    res.status(201).json(update);
   } catch (error) {
+    console.error('Create update error:', error);
     res.status(500).json({ error: error.message });
   }
 });
