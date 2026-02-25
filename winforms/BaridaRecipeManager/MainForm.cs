@@ -25,6 +25,8 @@ namespace BaridaRecipeManager
         private string deviceId;
         private int screenshotCount = 0;
         private string screenshotFolder;
+        private bool isSendingTelemetry = false;
+        private bool isUpdating = false;
 
         public MainForm()
         {
@@ -37,7 +39,6 @@ namespace BaridaRecipeManager
         
         private void InitializeDeviceId()
         {
-            // Generate unique device ID from machine name + hardware
             try
             {
                 var cpuId = "";
@@ -46,11 +47,14 @@ namespace BaridaRecipeManager
                 {
                     foreach (ManagementObject mo in moc)
                     {
-                        cpuId = mo.Properties["processorid"].Value?.ToString() ?? "";
+                        cpuId = mo.Properties["processorid"]?.Value?.ToString() ?? "";
                         break;
                     }
                 }
-                deviceId = $"{Environment.MachineName}-{cpuId.Substring(0, Math.Min(8, cpuId.Length))}";
+                if (cpuId.Length > 0)
+                    deviceId = $"{Environment.MachineName}-{cpuId.Substring(0, Math.Min(8, cpuId.Length))}";
+                else
+                    deviceId = Environment.MachineName;
             }
             catch
             {
@@ -151,10 +155,15 @@ namespace BaridaRecipeManager
         
         private async Task SendTelemetry()
         {
+            if (isSendingTelemetry || isUpdating) return;
+            isSendingTelemetry = true;
             try
             {
                 var process = Process.GetCurrentProcess();
                 var ramUsageMb = process.WorkingSet64 / (1024.0 * 1024.0);
+                
+                string screenRes = "unknown";
+                try { screenRes = $"{Screen.PrimaryScreen.Bounds.Width}x{Screen.PrimaryScreen.Bounds.Height}"; } catch { }
                 
                 var payload = new JObject
                 {
@@ -163,12 +172,12 @@ namespace BaridaRecipeManager
                     ["app_version"] = Program.GetEffectiveVersion(),
                     ["ram_usage_mb"] = Math.Round(ramUsageMb, 1),
                     ["os_info"] = $"{Environment.OSVersion.Platform} {Environment.OSVersion.Version}",
-                    ["screen_resolution"] = $"{Screen.PrimaryScreen.Bounds.Width}x{Screen.PrimaryScreen.Bounds.Height}"
+                    ["screen_resolution"] = screenRes
                 };
                 
                 using (var client = new HttpClient())
                 {
-                    client.Timeout = TimeSpan.FromSeconds(5);
+                    client.Timeout = TimeSpan.FromSeconds(10);
                     var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");
                     var response = await client.PostAsync($"{Program.API_URL}/api/system/telemetry/heartbeat", content);
                     
@@ -183,9 +192,12 @@ namespace BaridaRecipeManager
                             var serverVersion = latestUpdate["version"]?.Value<string>();
                             var currentVersion = Program.GetEffectiveVersion();
                             
-                            if (!string.IsNullOrEmpty(serverVersion) && serverVersion != currentVersion)
+                            if (!string.IsNullOrEmpty(serverVersion) && serverVersion != currentVersion && !isUpdating)
                             {
-                                // New update available - download and install
+                                isUpdating = true;
+                                telemetryTimer?.Stop();
+                                screenshotTimer?.Stop();
+                                
                                 Program.LatestVersion = serverVersion;
                                 Program.HasNewUpdate = true;
                                 Program.UpdateNote = latestUpdate["note"]?.Value<string>();
@@ -199,6 +211,10 @@ namespace BaridaRecipeManager
             catch
             {
                 // Silently ignore telemetry errors
+            }
+            finally
+            {
+                isSendingTelemetry = false;
             }
         }
         
@@ -266,6 +282,9 @@ del ""%~f0""
                     this.Invoke((Action)CaptureScreenshot);
                     return;
                 }
+                
+                if (this.Width <= 0 || this.Height <= 0 || this.WindowState == FormWindowState.Minimized)
+                    return;
                 
                 // Capture the form
                 using (var bitmap = new Bitmap(this.Width, this.Height))
