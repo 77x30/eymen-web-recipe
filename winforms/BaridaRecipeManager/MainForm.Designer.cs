@@ -15,7 +15,6 @@ namespace BaridaRecipeManager
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.SuspendLayout();
             // 
             // MainForm
@@ -24,7 +23,7 @@ namespace BaridaRecipeManager
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(30)))), ((int)(((byte)(58)))), ((int)(((byte)(138)))));
             this.ClientSize = new System.Drawing.Size(1370, 749);
-            this.Icon = new System.Drawing.Icon("Resources\\icon.ico");
+            this.Icon = global::BaridaRecipeManager.Properties.Resources.icon;
             this.MinimumSize = new System.Drawing.Size(1024, 726);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

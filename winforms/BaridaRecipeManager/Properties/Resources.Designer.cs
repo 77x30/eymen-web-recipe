@@ -59,5 +59,15 @@ namespace BaridaRecipeManager.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   (Icon) türünde yerelleştirilmiş bir kaynak arar.
+        /// </summary>
+        internal static System.Drawing.Icon icon {
+            get {
+                object obj = ResourceManager.GetObject("icon", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
     }
 }
