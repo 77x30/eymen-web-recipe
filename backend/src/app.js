@@ -158,19 +158,19 @@ sequelize.authenticate()
     // Force create SystemUpdate and AppTelemetry tables if they don't exist
     const { SystemUpdate, AppTelemetry } = require('./models');
     
-    // Create tables if they don't exist (force: false means don't drop existing)
+    // Create/alter tables to add new columns
     try {
-      await SystemUpdate.sync({ force: false });
+      await SystemUpdate.sync({ alter: true });
       console.log('SystemUpdate table ready');
     } catch (err) {
-      console.log('SystemUpdate sync error (table may already exist):', err.message);
+      console.log('SystemUpdate sync error:', err.message);
     }
     
     try {
-      await AppTelemetry.sync({ force: false });
+      await AppTelemetry.sync({ alter: true });
       console.log('AppTelemetry table ready');
     } catch (err) {
-      console.log('AppTelemetry sync error (table may already exist):', err.message);
+      console.log('AppTelemetry sync error:', err.message);
     }
     
     await cleanupMockRecipes();
