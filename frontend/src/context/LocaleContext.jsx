@@ -413,7 +413,7 @@ const LocaleContext = createContext();
 
 export function LocaleProvider({ children }) {
   const [locale, setLocale] = useState(() => {
-    return localStorage.getItem('locale') || 'tr';
+    return localStorage.getItem('locale') || 'en';
   });
 
   useEffect(() => {
