@@ -23,7 +23,7 @@ namespace BaridaRecipeManager
         private void InitializeForm()
         {
             this.Text = "Yenilikler";
-            this.Size = new Size(450, 350);
+            this.Size = new Size(480, 380);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.None;
             this.BackColor = Color.White;
@@ -36,31 +36,57 @@ namespace BaridaRecipeManager
             // Add shadow effect
             this.Paint += WhatsNewForm_Paint;
             
-            // Header panel
+            // Header panel with gradient
             var headerPanel = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 80,
-                BackColor = Color.FromArgb(34, 197, 94) // Green
+                Height = 100,
+                BackColor = Color.FromArgb(30, 64, 175) // Blue-800
             };
-            
-            var iconLabel = new Label
+            headerPanel.Paint += (s, e) =>
             {
-                Text = "🎉",
-                Font = new Font("Segoe UI Emoji", 28),
-                AutoSize = true,
-                ForeColor = Color.White,
-                Location = new Point(20, 15)
+                using (var brush = new LinearGradientBrush(
+                    headerPanel.ClientRectangle,
+                    Color.FromArgb(30, 64, 175),
+                    Color.FromArgb(59, 130, 246),
+                    LinearGradientMode.Horizontal))
+                {
+                    e.Graphics.FillRectangle(brush, headerPanel.ClientRectangle);
+                }
+                
+                // Draw update icon (circle with arrow)
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                var iconRect = new Rectangle(25, 25, 50, 50);
+                using (var iconBrush = new SolidBrush(Color.FromArgb(80, 255, 255, 255)))
+                {
+                    e.Graphics.FillEllipse(iconBrush, iconRect);
+                }
+                using (var iconPen = new Pen(Color.White, 2.5f))
+                {
+                    // Draw refresh arrow
+                    var centerX = iconRect.X + iconRect.Width / 2;
+                    var centerY = iconRect.Y + iconRect.Height / 2;
+                    var radius = 14;
+                    e.Graphics.DrawArc(iconPen, centerX - radius, centerY - radius, radius * 2, radius * 2, -30, 300);
+                    // Arrow head
+                    var arrowPoints = new PointF[]
+                    {
+                        new PointF(centerX + radius - 2, centerY - radius + 6),
+                        new PointF(centerX + radius + 5, centerY - radius - 1),
+                        new PointF(centerX + radius + 5, centerY - radius + 8)
+                    };
+                    e.Graphics.FillPolygon(new SolidBrush(Color.White), arrowPoints);
+                }
             };
-            headerPanel.Controls.Add(iconLabel);
             
             var titleLabel = new Label
             {
-                Text = "Yeni Güncelleme!",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
+                Text = "Yeni Guncelleme Mevcut!",
+                Font = new Font("Segoe UI", 16, FontStyle.Bold),
                 ForeColor = Color.White,
                 AutoSize = true,
-                Location = new Point(75, 15)
+                BackColor = Color.Transparent,
+                Location = new Point(90, 22)
             };
             headerPanel.Controls.Add(titleLabel);
             
@@ -68,9 +94,10 @@ namespace BaridaRecipeManager
             {
                 Text = $"Versiyon {version}",
                 Font = new Font("Segoe UI", 11),
-                ForeColor = Color.FromArgb(220, 255, 255, 255),
+                ForeColor = Color.FromArgb(200, 200, 255),
                 AutoSize = true,
-                Location = new Point(75, 48)
+                BackColor = Color.Transparent,
+                Location = new Point(90, 52)
             };
             headerPanel.Controls.Add(versionLabel);
             
@@ -79,34 +106,55 @@ namespace BaridaRecipeManager
             // Content panel
             var contentPanel = new Panel
             {
-                Location = new Point(0, 80),
-                Size = new Size(450, 200),
+                Location = new Point(0, 100),
+                Size = new Size(480, 200),
                 BackColor = Color.White,
                 Padding = new Padding(25)
             };
             
-            // Date label
+            // Date info with icon
             if (releasedAt.HasValue)
             {
+                var datePanel = new Panel
+                {
+                    Location = new Point(25, 15),
+                    Size = new Size(430, 30),
+                    BackColor = Color.FromArgb(249, 250, 251)
+                };
+                datePanel.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    // Draw calendar icon
+                    using (var pen = new Pen(Color.FromArgb(107, 114, 128), 1.5f))
+                    {
+                        e.Graphics.DrawRectangle(pen, 8, 6, 14, 14);
+                        e.Graphics.DrawLine(pen, 8, 11, 22, 11);
+                        e.Graphics.DrawLine(pen, 11, 4, 11, 8);
+                        e.Graphics.DrawLine(pen, 19, 4, 19, 8);
+                    }
+                };
+                
                 var dateLabel = new Label
                 {
-                    Text = $"📅 {releasedAt.Value.ToString("dd MMMM yyyy, HH:mm")}",
+                    Text = releasedAt.Value.ToString("dd MMMM yyyy, HH:mm"),
                     Font = new Font("Segoe UI", 10),
                     ForeColor = Color.FromArgb(107, 114, 128),
                     AutoSize = true,
-                    Location = new Point(25, 10)
+                    BackColor = Color.Transparent,
+                    Location = new Point(30, 6)
                 };
-                contentPanel.Controls.Add(dateLabel);
+                datePanel.Controls.Add(dateLabel);
+                contentPanel.Controls.Add(datePanel);
             }
             
             // Note label with word wrap
             var noteLabel = new Label
             {
-                Text = !string.IsNullOrEmpty(note) ? note : "Bu güncelleme ile sistem iyileştirmeleri yapıldı.",
+                Text = !string.IsNullOrEmpty(note) ? note : "Bu guncelleme ile sistem iyilestirmeleri yapildi.",
                 Font = new Font("Segoe UI", 11),
                 ForeColor = Color.FromArgb(55, 65, 81),
-                Location = new Point(25, releasedAt.HasValue ? 40 : 20),
-                Size = new Size(400, 130),
+                Location = new Point(25, releasedAt.HasValue ? 55 : 20),
+                Size = new Size(430, 130),
                 AutoSize = false
             };
             contentPanel.Controls.Add(noteLabel);
@@ -117,7 +165,7 @@ namespace BaridaRecipeManager
             var footerPanel = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 70,
+                Height = 80,
                 BackColor = Color.FromArgb(249, 250, 251),
                 Padding = new Padding(25, 15, 25, 15)
             };
@@ -126,8 +174,8 @@ namespace BaridaRecipeManager
             {
                 Text = "Devam Et",
                 Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                Size = new Size(400, 40),
-                Location = new Point(25, 15),
+                Size = new Size(430, 45),
+                Location = new Point(25, 17),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(59, 130, 246),
                 ForeColor = Color.White,

@@ -108,6 +108,11 @@ const translations = {
     'admin.liveUpdateDescription': 'Bu güncelleme tüm aktif workspace\'lere anında yayınlanacak ve kullanıcılar sayfayı yenilemeden değişiklikleri görecektir.',
     'admin.updateDescription': 'Güncelleme açıklaması...',
     'admin.publishedBy': 'Tarafından:',
+    'admin.updateTarget': 'Güncelleme Hedefi',
+    'admin.globalUpdate': 'Genel Güncelleme',
+    'admin.workspaceUpdate': 'Workspace Güncelleme',
+    'admin.selectWorkspaces': 'Workspace Seç',
+    'admin.selected': 'seçildi',
     
     // Navigation
     'nav.dashboard': 'Dashboard',
@@ -146,6 +151,19 @@ const translations = {
     'common.close': 'Kapat',
     'common.cancel': 'İptal',
     'common.online': 'Çevrimiçi',
+    
+    // Download
+    'download.launcher': 'Launcher İndir',
+    'download.inProgress': 'İndiriliyor...',
+    'download.completed': 'İndirme Tamamlandı',
+    'download.error': 'İndirme Hatası',
+    'download.downloading': 'İndiriliyor',
+    'download.verified': 'Dijital İmza Doğrulandı',
+    'download.instructions': 'İndirilen dosyayı çalıştırarak Barida Launcher\'ı yükleyebilirsiniz.',
+    'download.appDescription': 'Endüstriyel Reçete Yönetim Sistemi',
+    'download.signed': 'İmzalı',
+    'download.downloadAgain': 'Tekrar İndir',
+    'download.pleaseWait': 'Lütfen bekleyin...',
     
     // Footer
     'footer.copyright': '© 2026 Barida Makina • Industrial Solutions',
@@ -291,6 +309,11 @@ const translations = {
     'admin.liveUpdateDescription': 'This update will be published instantly to all active workspaces and users will see changes without refreshing.',
     'admin.updateDescription': 'Update description...',
     'admin.publishedBy': 'By:',
+    'admin.updateTarget': 'Update Target',
+    'admin.globalUpdate': 'Global Update',
+    'admin.workspaceUpdate': 'Workspace Update',
+    'admin.selectWorkspaces': 'Select Workspaces',
+    'admin.selected': 'selected',
     
     // Navigation
     'nav.dashboard': 'Dashboard',
@@ -329,6 +352,19 @@ const translations = {
     'common.close': 'Close',
     'common.cancel': 'Cancel',
     'common.online': 'Online',
+    
+    // Download
+    'download.launcher': 'Download Launcher',
+    'download.inProgress': 'Downloading...',
+    'download.completed': 'Download Complete',
+    'download.error': 'Download Error',
+    'download.downloading': 'Downloading',
+    'download.verified': 'Digital Signature Verified',
+    'download.instructions': 'Run the downloaded file to install Barida Launcher.',
+    'download.appDescription': 'Industrial Recipe Management System',
+    'download.signed': 'Signed',
+    'download.downloadAgain': 'Download Again',
+    'download.pleaseWait': 'Please wait...',
     
     // Footer
     'footer.copyright': '© 2026 Barida Makina • Industrial Solutions',

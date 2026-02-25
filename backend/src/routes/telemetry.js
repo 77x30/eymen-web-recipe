@@ -21,12 +21,17 @@ router.get('/updates', authenticate, authorize('admin'), async (req, res) => {
 // Publish new update (admin only)
 router.post('/updates', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { version, note, target_workspaces } = req.body;
+    const { version, note, target, workspace_ids } = req.body;
+    
+    // Store workspace_ids as JSON array for targeted updates
+    const targetWorkspaces = target === 'workspace' && workspace_ids?.length > 0 
+      ? JSON.stringify(workspace_ids) 
+      : null;
     
     const update = await SystemUpdate.create({
       version: version || '1.0.0',
       note,
-      target_workspaces: target_workspaces ? JSON.stringify(target_workspaces) : null,
+      target_workspaces: targetWorkspaces,
       created_by: req.user.id
     });
     

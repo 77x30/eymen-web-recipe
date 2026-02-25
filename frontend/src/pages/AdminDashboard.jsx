@@ -26,6 +26,8 @@ export default function AdminDashboard() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateNote, setUpdateNote] = useState('');
   const [updateVersion, setUpdateVersion] = useState('');
+  const [updateTarget, setUpdateTarget] = useState('global'); // 'global' or 'workspace'
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState([]);
   const [systemUpdates, setSystemUpdates] = useState([]);
   const [telemetry, setTelemetry] = useState(null);
   const [publishing, setPublishing] = useState(false);
@@ -110,18 +112,27 @@ export default function AdminDashboard() {
       return;
     }
     
+    if (updateTarget === 'workspace' && selectedWorkspaces.length === 0) {
+      addToast('En az bir workspace seçmelisiniz', 'warning', 3000);
+      return;
+    }
+    
     setPublishing(true);
     const toastId = addToast('Güncelleme yayınlanıyor...', 'loading', 0);
     
     try {
       await api.post('/system/updates', {
         version: updateVersion,
-        note: updateNote
+        note: updateNote,
+        target: updateTarget,
+        workspace_ids: updateTarget === 'workspace' ? selectedWorkspaces : null
       });
       
       addToast(`v${updateVersion} ${t('admin.publishedSuccessfully')}`, 'success', 4000);
       setUpdateNote('');
       setUpdateVersion('');
+      setUpdateTarget('global');
+      setSelectedWorkspaces([]);
       setShowUpdateModal(false);
       fetchData();
     } catch (error) {
@@ -497,7 +508,7 @@ export default function AdminDashboard() {
       {/* Update Modal */}
       {showUpdateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowUpdateModal(false)}>
-          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl w-full max-w-md p-6`} onClick={e => e.stopPropagation()}>
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto`} onClick={e => e.stopPropagation()}>
             <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'} mb-4 flex items-center gap-2`}>
               <span className="icon text-green-600">rocket_launch</span> {t('admin.publishUpdate')}
             </h3>
@@ -511,6 +522,81 @@ export default function AdminDashboard() {
                 {t('admin.liveUpdateDescription')}
               </p>
             </div>
+            
+            {/* Update Target Selection */}
+            <div className="mb-4">
+              <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>{t('admin.updateTarget')}</label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setUpdateTarget('global'); setSelectedWorkspaces([]); }}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition ${
+                    updateTarget === 'global' 
+                      ? 'border-green-500 bg-green-500/10 text-green-600' 
+                      : isDark ? 'border-gray-600 text-gray-400 hover:border-gray-500' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="icon icon-sm">public</span>
+                  <span className="font-medium">{t('admin.globalUpdate')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUpdateTarget('workspace')}
+                  className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition ${
+                    updateTarget === 'workspace' 
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-600' 
+                      : isDark ? 'border-gray-600 text-gray-400 hover:border-gray-500' : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="icon icon-sm">domain</span>
+                  <span className="font-medium">{t('admin.workspaceUpdate')}</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* Workspace Selection (when workspace target selected) */}
+            {updateTarget === 'workspace' && (
+              <div className="mb-4">
+                <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  {t('admin.selectWorkspaces')} <span className="text-gray-400">({selectedWorkspaces.length} {t('admin.selected')})</span>
+                </label>
+                <div className={`max-h-40 overflow-y-auto border ${isDark ? 'border-gray-600' : 'border-gray-200'} rounded-lg`}>
+                  {workspaces.map(ws => (
+                    <label 
+                      key={ws.id}
+                      className={`flex items-center gap-3 p-3 cursor-pointer transition ${
+                        selectedWorkspaces.includes(ws.id)
+                          ? isDark ? 'bg-blue-900/30' : 'bg-blue-50'
+                          : isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                      } ${isDark ? 'border-gray-700' : 'border-gray-100'} border-b last:border-b-0`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedWorkspaces.includes(ws.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedWorkspaces([...selectedWorkspaces, ws.id]);
+                          } else {
+                            setSelectedWorkspaces(selectedWorkspaces.filter(id => id !== ws.id));
+                          }
+                        }}
+                        className="w-4 h-4 rounded text-blue-500 focus:ring-blue-500"
+                      />
+                      <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold`}>
+                        {ws.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-800'}`}>{ws.name}</p>
+                        <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{ws.subdomain}.barida.xyz</p>
+                      </div>
+                    </label>
+                  ))}
+                  {workspaces.length === 0 && (
+                    <p className={`p-4 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{t('admin.noWorkspaces')}</p>
+                  )}
+                </div>
+              </div>
+            )}
             
             <div>
               <label className={`block text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'} mb-1`}>{t('admin.version')}</label>
@@ -543,7 +629,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={handlePublishUpdate}
-                disabled={publishing || !updateVersion || !updateNote}
+                disabled={publishing || !updateVersion || !updateNote || (updateTarget === 'workspace' && selectedWorkspaces.length === 0)}
                 className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {publishing ? (

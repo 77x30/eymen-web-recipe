@@ -13,6 +13,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState('idle'); // idle, downloading, completed, error
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [verificationToken, setVerificationToken] = useState('');
   const [checkingVerification, setCheckingVerification] = useState(false);
@@ -22,6 +25,32 @@ export default function Login() {
   const { addToast, updateToast, removeToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Download launcher handler
+  const handleDownloadLauncher = () => {
+    setShowDownloadModal(true);
+    setDownloadStatus('downloading');
+    setDownloadProgress(0);
+    
+    // Simulate download progress
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 15 + 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setDownloadStatus('completed');
+        // Trigger actual download
+        const link = document.createElement('a');
+        link.href = '/downloads/BaridaLauncher-Setup.exe';
+        link.download = 'BaridaLauncher-Setup.exe';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      setDownloadProgress(Math.min(progress, 100));
+    }, 200);
+  };
 
   // Check for token in URL (redirect from main domain)
   useEffect(() => {
@@ -320,6 +349,118 @@ export default function Login() {
               >
                 {t('biometric.cancel')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Download Launcher Button - Bottom Left (only on main domain) */}
+      {isMainDomain && (
+        <button
+          onClick={handleDownloadLauncher}
+          className="fixed bottom-6 left-6 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105 z-40"
+        >
+          <span className="icon">download</span>
+          <span className="font-medium text-sm">{t('download.launcher')}</span>
+        </button>
+      )}
+
+      {/* Download Modal */}
+      {showDownloadModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => downloadStatus !== 'downloading' && setShowDownloadModal(false)}>
+          <div className="bg-gray-800 rounded-2xl max-w-md w-full overflow-hidden border border-gray-700" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-center text-white">
+              <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                {downloadStatus === 'completed' ? (
+                  <span className="icon text-4xl">check_circle</span>
+                ) : downloadStatus === 'error' ? (
+                  <span className="icon text-4xl">error</span>
+                ) : (
+                  <span className="icon text-4xl animate-bounce">download</span>
+                )}
+              </div>
+              <h3 className="text-xl font-bold">
+                {downloadStatus === 'completed' ? t('download.completed') : 
+                 downloadStatus === 'error' ? t('download.error') : 
+                 t('download.inProgress')}
+              </h3>
+              <p className="text-blue-200 text-sm mt-1">Barida Launcher v1.0.0</p>
+            </div>
+            
+            <div className="p-6">
+              {/* Progress Bar */}
+              {downloadStatus === 'downloading' && (
+                <div className="mb-6">
+                  <div className="flex justify-between text-sm text-gray-400 mb-2">
+                    <span>{t('download.downloading')}</span>
+                    <span>{Math.round(downloadProgress)}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-200"
+                      style={{ width: `${downloadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Completed State */}
+              {downloadStatus === 'completed' && (
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center gap-2 text-green-400 mb-4">
+                    <span className="icon">verified</span>
+                    <span>{t('download.verified')}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm">
+                    {t('download.instructions')}
+                  </p>
+                </div>
+              )}
+
+              {/* App Info */}
+              <div className="bg-gray-700/50 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                    B
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white">Barida Launcher</h4>
+                    <p className="text-gray-400 text-sm">{t('download.appDescription')}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-600">
+                  <span className="px-2 py-1 bg-gray-600/50 rounded-lg text-xs text-gray-300 flex items-center gap-1">
+                    <span className="icon icon-sm">memory</span> ~85 MB
+                  </span>
+                  <span className="px-2 py-1 bg-gray-600/50 rounded-lg text-xs text-gray-300 flex items-center gap-1">
+                    <span className="icon icon-sm">desktop_windows</span> Windows 10+
+                  </span>
+                  <span className="px-2 py-1 bg-gray-600/50 rounded-lg text-xs text-gray-300 flex items-center gap-1">
+                    <span className="icon icon-sm">verified_user</span> {t('download.signed')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 mt-6">
+                {downloadStatus === 'completed' && (
+                  <button
+                    onClick={handleDownloadLauncher}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition flex items-center justify-center gap-2"
+                  >
+                    <span className="icon">refresh</span>
+                    {t('download.downloadAgain')}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className={`${downloadStatus === 'downloading' ? 'flex-1' : ''} py-3 px-6 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition`}
+                  disabled={downloadStatus === 'downloading'}
+                >
+                  {downloadStatus === 'downloading' ? t('download.pleaseWait') : t('common.close')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
