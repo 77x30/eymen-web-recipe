@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows.Forms;
 
 namespace BaridaRecipeManager
@@ -17,6 +18,24 @@ namespace BaridaRecipeManager
         public static string UpdateNote = null;
         public static DateTime? UpdateReleasedAt = null;
         public static bool HasNewUpdate = false;
+
+        // Returns the effective version: installed_version.txt if exists, else APP_VERSION
+        public static string GetEffectiveVersion()
+        {
+            try
+            {
+                var versionFile = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "BaridaRecipeManager", "installed_version.txt");
+                if (File.Exists(versionFile))
+                {
+                    var v = File.ReadAllText(versionFile).Trim();
+                    if (!string.IsNullOrEmpty(v)) return v;
+                }
+            }
+            catch { }
+            return APP_VERSION;
+        }
 
         [STAThread]
         static void Main()

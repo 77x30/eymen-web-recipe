@@ -67,8 +67,9 @@ namespace BaridaRecipeManager
                 {
                     client.Timeout = TimeSpan.FromSeconds(10);
                     
-                    // Check updates via API
-                    var apiUrl = $"{Program.API_URL}/api/updates/check?current_version={Program.APP_VERSION}";
+                    // Check updates via API (use effective version which includes installed updates)
+                    var effectiveVersion = Program.GetEffectiveVersion();
+                    var apiUrl = $"{Program.API_URL}/api/updates/check?current_version={effectiveVersion}";
                     var response = await client.GetStringAsync(apiUrl);
                     var json = JObject.Parse(response);
                     
