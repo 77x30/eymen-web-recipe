@@ -180,6 +180,13 @@ No sample/mock recipes are auto-created. Recipes and records are fully managed b
 ### Health
 - `GET /api/health` - System health check
 
+### Telemetry & Updates (Admin only)
+- `GET /api/system/updates` - List published system updates
+- `POST /api/system/updates` - Publish new update
+- `GET /api/system/telemetry` - Get WinForms app telemetry overview
+- `POST /api/system/telemetry/heartbeat` - WinForms heartbeat (see below)
+- `GET /api/system/version` - Get latest version info (public)
+
 ### Export
 - `GET /api/recipes/:id/export` - Export recipe as CSV
 
@@ -232,6 +239,110 @@ vercel deploy
 2. Add MySQL service
 3. Connect the backend repository
 4. Set environment variables from MySQL
+
+## WinForms Telemetry Integration
+
+WinForms desktop applications can report telemetry to the admin dashboard by sending periodic heartbeats.
+
+### Heartbeat Endpoint
+
+**POST** `/api/system/telemetry/heartbeat`
+
+```json
+{
+  "device_id": "unique-machine-id",
+  "workspace_subdomain": "tofas",
+  "username": "operator1",
+  "app_version": "1.0.0",
+  "ram_usage_mb": 128.5,
+  "cpu_usage_percent": 12.3,
+  "os_info": "Windows 10 Pro 22H2",
+  "screen_resolution": "1920x1080"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "server_time": "2026-02-25T06:00:00.000Z",
+  "latest_update": {
+    "version": "1.0.1",
+    "note": "Bug fixes and improvements",
+    "released_at": "2026-02-24T12:00:00.000Z"
+  }
+}
+```
+
+### C# Example
+
+```csharp
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using Newtonsoft.Json;
+
+public class TelemetryService
+{
+    private readonly HttpClient _client;
+    private readonly string _apiUrl;
+    private readonly string _deviceId;
+
+    public TelemetryService(string apiUrl)
+    {
+        _client = new HttpClient();
+        _apiUrl = apiUrl;
+        _deviceId = GetDeviceId();
+    }
+
+    private string GetDeviceId()
+    {
+        return Environment.MachineName + "-" + Environment.UserName;
+    }
+
+    public async Task SendHeartbeat(string workspace, string username, string appVersion)
+    {
+        var process = Process.GetCurrentProcess();
+        var ramMb = process.WorkingSet64 / (1024.0 * 1024.0);
+
+        var payload = new
+        {
+            device_id = _deviceId,
+            workspace_subdomain = workspace,
+            username = username,
+            app_version = appVersion,
+            ram_usage_mb = Math.Round(ramMb, 1),
+            os_info = Environment.OSVersion.ToString(),
+            screen_resolution = $"{System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width}x{System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height}"
+        };
+
+        var json = JsonConvert.SerializeObject(payload);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        try
+        {
+            var response = await _client.PostAsync($"{_apiUrl}/api/system/telemetry/heartbeat", content);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                // Check for updates in result.latest_update
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error
+        }
+    }
+}
+```
+
+### Recommended Usage
+
+- Send heartbeat every 30 seconds
+- Check `latest_update` in response for version updates
+- Show notification if new version available
 
 ## License
 

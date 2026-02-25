@@ -11,6 +11,7 @@ export default function AdminPanel() {
   const [showAddUser, setShowAddUser] = useState(false);
   const [showAddWorkspace, setShowAddWorkspace] = useState(false);
   const [showBiometricModal, setShowBiometricModal] = useState(null);
+  const [showGotoWorkspaceModal, setShowGotoWorkspaceModal] = useState(null);
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'operator', workspace_id: '' });
   const [newWorkspace, setNewWorkspace] = useState({ name: '', subdomain: '', company: '', location: '', description: '' });
   const [error, setError] = useState('');
@@ -177,6 +178,14 @@ export default function AdminPanel() {
     } catch (err) {
       setError('Workspace test edilemedi');
     }
+  };
+
+  const handleGotoWorkspace = (workspace, role) => {
+    const protocol = window.location.protocol;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const workspaceUrl = `${protocol}//${workspace.subdomain}.barida.xyz${port}/`;
+    window.open(workspaceUrl, '_blank');
+    setShowGotoWorkspaceModal(null);
   };
 
   const handleWorkspaceStatusChange = async (workspaceId, newStatus) => {
@@ -816,6 +825,12 @@ export default function AdminPanel() {
                 
                 <div className="flex gap-2 mt-3 pt-3 border-t">
                   <button
+                    onClick={() => setShowGotoWorkspaceModal(workspace)}
+                    className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+                  >
+                    <span className="icon icon-sm">open_in_new</span> Git
+                  </button>
+                  <button
                     onClick={() => handleTestWorkspace(workspace.id)}
                     className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
                   >
@@ -875,6 +890,67 @@ export default function AdminPanel() {
                 </span>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Go to Workspace Modal */}
+      {showGotoWorkspaceModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowGotoWorkspaceModal(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Workspace'e Git</h3>
+              <button onClick={() => setShowGotoWorkspaceModal(null)} className="text-gray-400 hover:text-gray-600">
+                <span className="icon">close</span>
+              </button>
+            </div>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
+                {showGotoWorkspaceModal.name?.charAt(0).toUpperCase()}
+              </div>
+              <h4 className="font-semibold text-gray-800 text-lg">{showGotoWorkspaceModal.name}</h4>
+              <p className="text-cyan-600 text-sm">{showGotoWorkspaceModal.subdomain}.barida.xyz</p>
+            </div>
+
+            <p className="text-gray-600 text-center mb-4">
+              Bu workspace'e nasıl gitmek istiyorsunuz?
+            </p>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => handleGotoWorkspace(showGotoWorkspaceModal, 'user')}
+                className="w-full flex items-center gap-4 p-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-xl transition"
+              >
+                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white">
+                  <span className="icon">person</span>
+                </div>
+                <div className="text-left">
+                  <h5 className="font-semibold text-blue-700">Kullanıcı Olarak</h5>
+                  <p className="text-sm text-blue-600">Normal kullanıcı görünümüyle giriş yapın</p>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => handleGotoWorkspace(showGotoWorkspaceModal, 'admin')}
+                className="w-full flex items-center gap-4 p-4 bg-red-50 hover:bg-red-100 border-2 border-red-200 rounded-xl transition"
+              >
+                <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center text-white">
+                  <span className="icon">admin_panel_settings</span>
+                </div>
+                <div className="text-left">
+                  <h5 className="font-semibold text-red-700">Admin Olarak</h5>
+                  <p className="text-sm text-red-600">Yönetici yetkileriyle giriş yapın</p>
+                </div>
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setShowGotoWorkspaceModal(null)}
+              className="w-full mt-4 py-2 text-gray-500 hover:text-gray-700 text-sm"
+            >
+              İptal
+            </button>
           </div>
         </div>
       )}

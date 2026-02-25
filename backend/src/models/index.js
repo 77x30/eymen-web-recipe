@@ -5,6 +5,8 @@ const DataRecord = require('./DataRecord');
 const RecordValue = require('./RecordValue');
 const ActivityLog = require('./ActivityLog');
 const Workspace = require('./Workspace');
+const SystemUpdate = require('./SystemUpdate');
+const AppTelemetry = require('./AppTelemetry');
 
 // Define associations
 Recipe.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
@@ -27,6 +29,9 @@ Workspace.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 Workspace.hasMany(User, { foreignKey: 'workspace_id', as: 'users' });
 User.belongsTo(Workspace, { foreignKey: 'workspace_id', as: 'workspace' });
 
+SystemUpdate.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+AppTelemetry.belongsTo(Workspace, { foreignKey: 'workspace_id', as: 'workspace' });
+
 module.exports = {
   User,
   Recipe,
@@ -34,5 +39,7 @@ module.exports = {
   DataRecord,
   RecordValue,
   ActivityLog,
-  Workspace
+  Workspace,
+  SystemUpdate,
+  AppTelemetry
 };

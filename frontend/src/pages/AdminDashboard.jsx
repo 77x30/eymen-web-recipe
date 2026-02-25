@@ -19,20 +19,37 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateNote, setUpdateNote] = useState('');
+  const [updateVersion, setUpdateVersion] = useState('');
+  const [systemUpdates, setSystemUpdates] = useState([]);
+  const [telemetry, setTelemetry] = useState(null);
 
   useEffect(() => {
     fetchData();
+    fetchTelemetry();
+    const telemetryInterval = setInterval(fetchTelemetry, 10000);
+    return () => clearInterval(telemetryInterval);
   }, []);
+
+  const fetchTelemetry = async () => {
+    try {
+      const response = await api.get('/system/telemetry');
+      setTelemetry(response.data);
+    } catch (error) {
+      console.error('Error fetching telemetry:', error);
+    }
+  };
 
   const fetchData = async () => {
     try {
-      const [workspacesRes, usersRes] = await Promise.all([
+      const [workspacesRes, usersRes, updatesRes] = await Promise.all([
         api.get('/workspaces'),
-        api.get('/admin/users')
+        api.get('/admin/users'),
+        api.get('/system/updates')
       ]);
       
       setWorkspaces(workspacesRes.data);
       setUsers(usersRes.data);
+      setSystemUpdates(updatesRes.data);
       
       // Calculate stats
       const pendingVerifications = usersRes.data.filter(u => !u.biometric_verified && u.role !== 'admin').length;
@@ -67,12 +84,21 @@ export default function AdminDashboard() {
 
 
 
-  const handlePublishUpdate = () => {
+  const handlePublishUpdate = async () => {
     if (updateNote) {
-      // In real app, this would trigger live update across all workspaces
-      alert('Güncelleme tüm workspace\'lere yayınlandı!');
-      setUpdateNote('');
-      setShowUpdateModal(false);
+      try {
+        await api.post('/system/updates', {
+          version: updateVersion || '1.0.0',
+          note: updateNote
+        });
+        setUpdateNote('');
+        setUpdateVersion('');
+        setShowUpdateModal(false);
+        fetchData();
+      } catch (error) {
+        console.error('Error publishing update:', error);
+        alert('Güncelleme yayınlanamadı');
+      }
     }
   };
 
@@ -323,6 +349,120 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* WinForms Telemetry */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="icon text-purple-600">desktop_windows</span>
+            WinForms Uygulamaları
+          </h3>
+          {telemetry ? (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <p className="text-purple-600 text-sm">Çevrimiçi</p>
+                  <p className="text-2xl font-bold text-purple-700">{telemetry.summary.online}</p>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <p className="text-yellow-600 text-sm">Boşta</p>
+                  <p className="text-2xl font-bold text-yellow-700">{telemetry.summary.idle}</p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-600 text-sm">Çevrimdışı</p>
+                  <p className="text-2xl font-bold text-gray-700">{telemetry.summary.offline}</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-600 text-sm">Ort. RAM</p>
+                  <p className="text-2xl font-bold text-blue-700">{telemetry.summary.avgRamMb} MB</p>
+                </div>
+              </div>
+              
+              {/* Version Distribution */}
+              {Object.keys(telemetry.versions).length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Versiyon Dağılımı</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(telemetry.versions).map(([version, count]) => (
+                      <span key={version} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                        v{version}: {count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Connected Clients List */}
+              {telemetry.clients.length > 0 && (
+                <div className="max-h-48 overflow-y-auto">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Bağlı İstemciler</p>
+                  <div className="space-y-2">
+                    {telemetry.clients.slice(0, 10).map((client, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${
+                            client.status === 'online' ? 'bg-green-500' :
+                            client.status === 'idle' ? 'bg-yellow-500' : 'bg-gray-400'
+                          }`}></span>
+                          <span className="font-medium">{client.username || 'Anonim'}</span>
+                          <span className="text-gray-500">({client.workspace})</span>
+                        </div>
+                        <div className="text-gray-500 flex items-center gap-3">
+                          <span>{client.ram_usage_mb?.toFixed(0)} MB</span>
+                          <span className="text-xs">v{client.app_version}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {telemetry.clients.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <span className="icon text-3xl mb-2 block">desktop_access_disabled</span>
+                  <p>Bağlı WinForms uygulaması yok</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p>Telemetri yükleniyor...</p>
+            </div>
+          )}
+        </div>
+
+        {/* Published Updates History */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <span className="icon text-green-600">history</span>
+            Yayınlanan Güncellemeler
+          </h3>
+          {systemUpdates.length > 0 ? (
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {systemUpdates.map((update) => (
+                <div key={update.id} className="p-3 bg-gray-50 rounded-lg border-l-4 border-green-500">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-gray-800">v{update.version}</span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(update.created_at).toLocaleDateString('tr-TR')} {new Date(update.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">{update.note || 'Açıklama yok'}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {update.creator?.username || 'Admin'} tarafından
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <span className="icon text-3xl mb-2 block">update</span>
+              <p>Henüz güncelleme yayınlanmadı</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Update Modal */}
       {showUpdateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowUpdateModal(false)}>
@@ -339,6 +479,17 @@ export default function AdminDashboard() {
               <p className="text-green-600 text-sm">
                 Bu güncelleme tüm aktif workspace'lere anında yayınlanacak ve kullanıcılar sayfayı yenilemeden değişiklikleri görecektir.
               </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Versiyon</label>
+              <input
+                type="text"
+                value={updateVersion}
+                onChange={(e) => setUpdateVersion(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent mb-3"
+                placeholder="1.0.1"
+              />
             </div>
             
             <div>
