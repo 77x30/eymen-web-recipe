@@ -130,7 +130,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+    <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden p-3 sm:p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute inset-0" style={{
@@ -138,20 +138,20 @@ export default function Login() {
         }}></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md px-6 py-8 flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-md flex flex-col items-center">
         {/* Logo */}
-        <div className="text-center mb-8 w-full">
+        <div className="text-center mb-5 w-full">
           <img 
             src="https://www.baridamakina.com/wp-content/uploads/2020/06/barida-logo.png" 
             alt="Barida Logo" 
-            className="h-14 mx-auto mb-4 brightness-0 invert object-contain"
+            className="h-12 sm:h-14 mx-auto mb-3 brightness-0 invert object-contain"
           />
-          <h1 className="text-2xl font-bold text-white tracking-wide">Recipe Management System</h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-wide">Recipe Management System</h1>
+          <p className="text-gray-400 mt-1.5 text-sm">
             {isSubdomain && workspace ? workspace.company || workspace.name : 'Industrial Automation Platform'}
           </p>
           {isSubdomain && workspace && (
-            <div className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-400 text-sm">
+            <div className="mt-2.5 inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-400 text-sm">
               <span className="icon icon-sm">business</span>
               {workspace.name}
             </div>
@@ -159,9 +159,9 @@ export default function Login() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-gray-700 w-full">
-          <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-2xl p-5 sm:p-6 border border-gray-700 w-full">
+          <div className="text-center mb-5">
+            <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
               <span className="icon text-blue-400 text-2xl">login</span>
             </div>
             <h2 className="text-xl font-semibold text-white">Oturum Aç</h2>
@@ -170,7 +170,7 @@ export default function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">
                 Kullanıcı Adı
@@ -181,7 +181,7 @@ export default function Login() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition"
                   placeholder="Kullanıcı adınızı girin"
                   required
                   autoComplete="username"
@@ -199,7 +199,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition"
                   placeholder="Şifrenizi girin"
                   required
                   autoComplete="current-password"
@@ -217,7 +217,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 rounded-xl font-semibold text-white transition text-base mt-2 ${
+              className={`w-full py-3 rounded-xl font-semibold text-white transition text-base mt-1 ${
                 loading 
                   ? 'bg-gray-600 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-lg shadow-blue-600/25'
@@ -238,14 +238,14 @@ export default function Login() {
           </form>
 
           {!isSubdomain && (
-            <p className="mt-5 text-center text-gray-500 text-xs">
+            <p className="mt-4 text-center text-gray-500 text-xs">
               Operatörler giriş yaptığında kendi workspace adreslerine yönlendirilir
             </p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-gray-500 text-sm">
+        <div className="text-center mt-4 text-gray-500 text-xs sm:text-sm">
           © 2026 Barida Makina • Industrial Solutions
         </div>
       </div>

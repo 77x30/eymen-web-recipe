@@ -117,12 +117,11 @@ VITE_API_URL=https://your-backend-url.com/api
 
 ## Default Users
 
-The system automatically seeds these users on first start:
+The system automatically seeds this user on first start:
 
 | Username | Password | Role |
 |----------|----------|------|
 | admin | admin123 | Admin |
-| operator | operator123 | Operator |
 
 ## Usage
 
@@ -143,14 +142,9 @@ The system automatically seeds these users on first start:
 - **Operator**: Create and edit recipes and records
 - **Viewer**: Read-only access
 
-## Example Recipes
+## Recipe Data
 
-The system comes with 4 example industrial recipes:
-
-1. **Coil Opener** - Line speed, width, thickness, tension parameters
-2. **Press Machine** - Force, stroke, speed, dwell time settings
-3. **CNC Milling** - Spindle speed, feed rate, depth of cut
-4. **Paint Mixing** - RGB color values and mixing parameters
+No sample/mock recipes are auto-created. Recipes and records are fully managed by users.
 
 ## API Endpoints
 
