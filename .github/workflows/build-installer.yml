@@ -31,10 +31,8 @@ jobs:
       working-directory: winforms/BaridaRecipeManager
       run: msbuild BaridaRecipeManager.csproj /p:Configuration=Release /t:Rebuild
     
-    - name: Download Inno Setup
-      run: |
-        Invoke-WebRequest -Uri "https://jrsoftware.org/download.php/is.exe" -OutFile "innosetup.exe"
-        Start-Process -FilePath "innosetup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-" -Wait
+    - name: Setup Inno Setup
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.4
     
     - name: Download WebView2 Bootstrapper
       run: |
@@ -42,7 +40,7 @@ jobs:
     
     - name: Build Installer
       run: |
-        & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" winforms/BaridaRecipeManager/setup.iss
+        iscc winforms/BaridaRecipeManager/setup.iss
     
     - name: Get version from setup
       id: version
