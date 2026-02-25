@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -114,18 +114,7 @@ export default function Dashboard() {
     value: r.elements?.length || 0
   }));
 
-  // Simulated production data for line chart
-  const productionData = [
-    { time: '08:00', efficiency: 85, output: 120, quality: 98 },
-    { time: '09:00', efficiency: 88, output: 135, quality: 97 },
-    { time: '10:00', efficiency: 92, output: 150, quality: 99 },
-    { time: '11:00', efficiency: 90, output: 145, quality: 98 },
-    { time: '12:00', efficiency: 75, output: 100, quality: 96 },
-    { time: '13:00', efficiency: 82, output: 125, quality: 97 },
-    { time: '14:00', efficiency: 95, output: 160, quality: 99 },
-    { time: '15:00', efficiency: 93, output: 155, quality: 98 },
-    { time: '16:00', efficiency: 89, output: 140, quality: 97 },
-  ];
+
 
   if (loading) {
     return (
@@ -289,46 +278,43 @@ export default function Dashboard() {
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm">Avg Efficiency</p>
-              <p className="text-3xl font-bold">92%</p>
+              <p className="text-orange-100 text-sm">Ortalama Parametre</p>
+              <p className="text-3xl font-bold">{stats.totalRecipes > 0 ? Math.round(stats.totalElements / stats.totalRecipes) : 0}</p>
             </div>
-            <span className="icon icon-lg opacity-80">trending_up</span>
+            <span className="icon icon-lg opacity-80">tune</span>
           </div>
         </div>
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Production Efficiency Chart */}
+        {/* Recipe Overview Bar Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Production Efficiency</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={productionData}>
-              <defs>
-                <linearGradient id="colorEfficiency" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorQuality" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="time" stroke="#6B7280" />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: 'white' }}
-              />
-              <Area type="monotone" dataKey="efficiency" stroke="#3B82F6" fillOpacity={1} fill="url(#colorEfficiency)" name="Efficiency %" />
-              <Area type="monotone" dataKey="quality" stroke="#10B981" fillOpacity={1} fill="url(#colorQuality)" name="Quality %" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Reçete Genel Bakış</h3>
+          {recipeChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={recipeChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" tick={{ fontSize: 12 }} />
+                <YAxis stroke="#6B7280" />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: 'white' }}
+                />
+                <Legend />
+                <Bar dataKey="elements" name="Parametreler" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="records" name="Kayıtlar" fill="#10B981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Henüz reçete yok
+            </div>
+          )}
         </div>
 
         {/* Recipe Elements Distribution */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recipe Elements Distribution</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Reçete Element Dağılımı</h3>
           {pieData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -353,53 +339,9 @@ export default function Dashboard() {
             </ResponsiveContainer>
           ) : (
             <div className="h-[300px] flex items-center justify-center text-gray-500">
-              No recipes yet
+              Henüz reçete yok
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recipe Overview Bar Chart */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Recipe Overview</h3>
-          {recipeChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={recipeChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#6B7280" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: 'white' }}
-                />
-                <Legend />
-                <Bar dataKey="elements" name="Elements" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="records" name="Records" fill="#10B981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              No recipes yet
-            </div>
-          )}
-        </div>
-
-        {/* Output Line Chart */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Production Output</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={productionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="time" stroke="#6B7280" />
-              <YAxis stroke="#6B7280" />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: 'white' }}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="output" stroke="#F59E0B" strokeWidth={3} dot={{ fill: '#F59E0B', strokeWidth: 2 }} name="Output (units)" />
-            </LineChart>
-          </ResponsiveContainer>
         </div>
       </div>
 

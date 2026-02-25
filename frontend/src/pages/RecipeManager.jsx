@@ -210,64 +210,99 @@ export default function RecipeManager() {
         </div>
       </div>
 
-      {/* Selection Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Recipe Selection */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-            <span className="icon icon-sm text-blue-500">folder</span> Reçete Seçimi
-          </label>
-          <select
-            value={selectedRecipe?.id || ''}
-            onChange={(e) => handleRecipeChange(parseInt(e.target.value))}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {recipes.map(recipe => (
-              <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
-            ))}
-          </select>
-          {selectedRecipe && (
-            <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="icon icon-sm">tag</span> ID: {selectedRecipe.id}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="icon icon-sm">tune</span> {selectedRecipe.elements?.length || 0} parametre
-              </span>
-            </div>
-          )}
+      {/* Recipe Selection - Card Grid */}
+      <div className="bg-white rounded-xl shadow-sm p-5">
+        <label className="block text-sm font-medium text-gray-500 mb-4 flex items-center gap-2">
+          <span className="icon icon-sm text-blue-500">folder</span> Reçete Seçimi
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {recipes.map((recipe, index) => (
+            <button
+              key={recipe.id}
+              onClick={() => handleRecipeChange(recipe.id)}
+              className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left group hover:shadow-md ${
+                selectedRecipe?.id === recipe.id
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
+                selectedRecipe?.id === recipe.id
+                  ? 'bg-blue-500 text-white'
+                  : index % 3 === 0 ? 'bg-blue-100 text-blue-600' :
+                    index % 3 === 1 ? 'bg-green-100 text-green-600' :
+                    'bg-purple-100 text-purple-600'
+              }`}>
+                <span className="icon">receipt_long</span>
+              </div>
+              <h4 className={`font-medium text-sm truncate ${
+                selectedRecipe?.id === recipe.id ? 'text-blue-700' : 'text-gray-700'
+              }`}>
+                {recipe.name}
+              </h4>
+              <p className="text-xs text-gray-500 mt-1">
+                {recipe.elements?.length || 0} parametre
+              </p>
+              {selectedRecipe?.id === recipe.id && (
+                <div className="absolute top-2 right-2">
+                  <span className="icon icon-sm text-blue-500">check_circle</span>
+                </div>
+              )}
+            </button>
+          ))}
         </div>
-        
-        {/* Data Record Selection */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
-          <label className="block text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
-            <span className="icon icon-sm text-green-500">description</span> Veri Kaydı
-          </label>
-          <select
-            value={selectedRecord?.id || ''}
-            onChange={(e) => handleRecordChange(parseInt(e.target.value))}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            disabled={records.length === 0}
-          >
-            {records.length === 0 ? (
-              <option>Kayıt yok</option>
-            ) : (
-              records.map(record => (
-                <option key={record.id} value={record.id}>{record.name}</option>
-              ))
-            )}
-          </select>
-          <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <span className="icon icon-sm">format_list_numbered</span> {records.length} kayıt
-            </span>
-            {selectedRecord && (
-              <span className="flex items-center gap-1">
-                <span className="icon icon-sm">numbers</span> No: {selectedRecord.record_number}
-              </span>
-            )}
+        {selectedRecipe && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-center gap-4 text-sm text-blue-700">
+            <span className="icon icon-sm">info</span>
+            <span>Seçili: <strong>{selectedRecipe.name}</strong> - {selectedRecipe.elements?.length || 0} parametre</span>
           </div>
-        </div>
+        )}
+      </div>
+        
+      {/* Data Record Selection - Horizontal Scroll Cards */}
+      <div className="bg-white rounded-xl shadow-sm p-5">
+        <label className="block text-sm font-medium text-gray-500 mb-4 flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <span className="icon icon-sm text-green-500">description</span> Veri Kayıtları
+          </span>
+          <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">{records.length} kayıt</span>
+        </label>
+        {records.length > 0 ? (
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+            {records.map((record, index) => (
+              <button
+                key={record.id}
+                onClick={() => handleRecordChange(record.id)}
+                className={`flex-shrink-0 p-4 rounded-xl border-2 transition-all duration-200 min-w-[140px] text-left ${
+                  selectedRecord?.id === record.id
+                    ? 'border-green-500 bg-green-50 shadow-md'
+                    : 'border-gray-200 bg-gray-50 hover:border-green-300 hover:bg-green-50/50'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 text-sm font-bold ${
+                  selectedRecord?.id === record.id
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {index + 1}
+                </div>
+                <h4 className={`font-medium text-sm truncate ${
+                  selectedRecord?.id === record.id ? 'text-green-700' : 'text-gray-700'
+                }`}>
+                  {record.name}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  No: {record.record_number}
+                </p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-gray-500">
+            <span className="icon text-3xl text-gray-300 block mb-2">folder_off</span>
+            <p className="text-sm">Bu reçete için kayıt yok</p>
+          </div>
+        )}
       </div>
 
       {/* Data Table */}
