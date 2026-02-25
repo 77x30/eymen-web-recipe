@@ -25,7 +25,7 @@ export default function Login() {
   const { addToast, updateToast, removeToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [fileSize, setFileSize] = useState('~85 MB'); // Default placeholder
+  const [fileSize, setFileSize] = useState(null);
 
   // Fetch actual file size on mount
   useEffect(() => {
@@ -470,11 +470,11 @@ export default function Login() {
                   )}
                 </div>
                 <h3 className="text-xl font-bold text-white">
-                  {downloadStatus === 'completed' ? 'Barida.exe Ready' : 
+                  {downloadStatus === 'completed' ? t('download.verified') : 
                    downloadStatus === 'error' ? t('download.error') : 
                    t('download.inProgress')}
                 </h3>
-                <p className="text-gray-500 text-sm mt-1">Barida Launcher v1.0.0</p>
+                <p className="text-gray-500 text-sm mt-1">BaridaRecipeManager.exe</p>
               </div>
             </div>
             
@@ -515,13 +515,13 @@ export default function Login() {
                     B
                   </div>
                   <div>
-                    <h4 className="font-semibold text-white">Barida Launcher</h4>
+                    <h4 className="font-semibold text-white">Barida Recipe Manager</h4>
                     <p className="text-gray-500 text-sm">{t('download.appDescription')}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
                   <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
-                    <span className="icon text-sm">memory</span> {fileSize}
+                    <span className="icon text-sm">memory</span> {fileSize || '...'}
                   </span>
                   <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
                     <span className="icon text-sm">desktop_windows</span> Windows 10+

@@ -23,7 +23,8 @@ namespace BaridaRecipeManager
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(500, 400);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = global::BaridaRecipeManager.Properties.Resources.icon;
+            var appIcon = global::BaridaRecipeManager.Properties.Resources.icon;
+            if (appIcon != null) this.Icon = appIcon;
             this.Name = "SplashForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

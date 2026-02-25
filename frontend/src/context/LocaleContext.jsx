@@ -155,15 +155,15 @@ const translations = {
     'common.online': 'Çevrimiçi',
     
     // Download
-    'download.launcher': 'Launcher İndir',
+    'download.launcher': 'Uygulamayı İndir',
     'download.inProgress': 'İndiriliyor...',
     'download.completed': 'İndirme Tamamlandı',
     'download.error': 'İndirme Hatası',
     'download.downloading': 'İndiriliyor',
-    'download.verified': 'Kurulum Dosyası Hazır',
-    'download.instructions': 'İndirilen kurulum dosyasını çalıştırarak Barida Launcher\'ı yükleyebilirsiniz.',
+    'download.verified': 'Barida.exe Hazır',
+    'download.instructions': 'İndirilen dosyayı çalıştırarak Barida uygulamasını başlatabilirsiniz.',
     'download.appDescription': 'Endüstriyel Reçete Yönetim Sistemi',
-    'download.signed': 'Kurulum',
+    'download.signed': 'Taşınabilir',
     'download.downloadAgain': 'Tekrar İndir',
     'download.pleaseWait': 'Lütfen bekleyin...',
     
@@ -358,15 +358,15 @@ const translations = {
     'common.online': 'Online',
     
     // Download
-    'download.launcher': 'Download Launcher',
+    'download.launcher': 'Download App',
     'download.inProgress': 'Downloading...',
     'download.completed': 'Download Complete',
     'download.error': 'Download Error',
     'download.downloading': 'Downloading',
-    'download.verified': 'Setup Ready',
-    'download.instructions': 'Run the downloaded setup file to install Barida Launcher.',
+    'download.verified': 'Barida.exe Ready',
+    'download.instructions': 'Run the downloaded file to start Barida application.',
     'download.appDescription': 'Industrial Recipe Management System',
-    'download.signed': 'Installer',
+    'download.signed': 'Portable',
     'download.downloadAgain': 'Download Again',
     'download.pleaseWait': 'Please wait...',
     

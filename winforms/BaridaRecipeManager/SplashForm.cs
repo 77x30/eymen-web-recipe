@@ -190,7 +190,7 @@ del ""%~f0""
                 return;
             }
             
-            currentMessageIndex = -1; // Custom message
+            currentMessageIndex = 0;
             statusMessages[0] = message;
             this.Invalidate();
         }
