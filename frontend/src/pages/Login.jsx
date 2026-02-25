@@ -22,6 +22,52 @@ export default function Login() {
   const { addToast, updateToast, removeToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState('idle');
+  const [fileSize, setFileSize] = useState(null);
+
+  // Detect if running inside WinForms WebView2
+  const isInsideApp = !!(window.chrome?.webview);
+
+  // Fetch actual file size on mount (only if download button will be shown)
+  useEffect(() => {
+    if (isInsideApp) return;
+    const fetchSize = async () => {
+      try {
+        const response = await fetch('/downloads/BaridaRecipeManager.exe', { method: 'HEAD' });
+        if (response.ok) {
+          const bytes = parseInt(response.headers.get('content-length') || 0);
+          if (bytes > 0) {
+            setFileSize(`${(bytes / (1024 * 1024)).toFixed(1)} MB`);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    };
+    fetchSize();
+  }, [isInsideApp]);
+
+  const handleDownloadLauncher = () => {
+    setShowDownloadModal(true);
+    setDownloadStatus('downloading');
+    setDownloadProgress(0);
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 10 + 2;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        setDownloadStatus('completed');
+        const link = document.createElement('a');
+        link.href = '/downloads/BaridaRecipeManager.exe';
+        link.download = 'BaridaRecipeManager.exe';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      setDownloadProgress(Math.min(progress, 100));
+    }, 120);
+  };
 
   // Check for token in URL (redirect from main domain)
   useEffect(() => {
@@ -331,6 +377,24 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Divider & Download (hidden inside WinForms app) */}
+          {!isInsideApp && isMainDomain && (
+            <>
+              <div className="relative my-8">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+              </div>
+              <button
+                onClick={handleDownloadLauncher}
+                className="w-full flex items-center justify-center gap-3 py-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white rounded-xl transition-all group"
+              >
+                <span className="icon text-blue-400 group-hover:scale-110 transition-transform">download</span>
+                <span className="font-medium">{t('download.launcher')}</span>
+              </button>
+            </>
+          )}
+
           {/* Mobile Footer */}
           <div className="lg:hidden text-center mt-8 text-gray-600 text-sm">
             {t('footer.copyright')}
@@ -380,6 +444,86 @@ export default function Login() {
               >
                 {t('biometric.cancel')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Download Modal */}
+      {showDownloadModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => downloadStatus !== 'downloading' && setShowDownloadModal(false)}>
+          <div className="bg-[#12121a] rounded-2xl max-w-md w-full overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="relative p-8 text-center overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-transparent" />
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                  {downloadStatus === 'completed' ? (
+                    <span className="icon text-4xl text-white">check</span>
+                  ) : (
+                    <span className="icon text-4xl text-white">download</span>
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  {downloadStatus === 'completed' ? t('download.verified') : t('download.inProgress')}
+                </h3>
+                <p className="text-gray-500 text-sm mt-1">BaridaRecipeManager.exe</p>
+              </div>
+            </div>
+            <div className="p-6 pt-0">
+              {downloadStatus === 'downloading' && (
+                <div className="mb-6">
+                  <div className="flex justify-between text-sm text-gray-500 mb-2">
+                    <span>{t('download.downloading')}</span>
+                    <span className="text-white font-medium">{Math.round(downloadProgress)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-200" style={{ width: `${downloadProgress}%` }} />
+                  </div>
+                </div>
+              )}
+              {downloadStatus === 'completed' && (
+                <div className="text-center mb-6 py-4 px-6 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
+                    <span className="icon">verified</span>
+                    <span className="font-medium">{t('download.verified')}</span>
+                  </div>
+                  <p className="text-gray-500 text-sm">{t('download.instructions')}</p>
+                </div>
+              )}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-500/20">B</div>
+                  <div>
+                    <h4 className="font-semibold text-white">Barida Recipe Manager</h4>
+                    <p className="text-gray-500 text-sm">{t('download.appDescription')}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-white/5">
+                  <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
+                    <span className="icon text-sm">memory</span> {fileSize || '...'}
+                  </span>
+                  <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
+                    <span className="icon text-sm">desktop_windows</span> Windows 10+
+                  </span>
+                  <span className="px-3 py-1.5 bg-white/5 rounded-lg text-xs text-gray-400 flex items-center gap-1.5">
+                    <span className="icon text-sm">verified_user</span> {t('download.signed')}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                {downloadStatus === 'completed' && (
+                  <button onClick={handleDownloadLauncher} className="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+                    <span className="icon">refresh</span> {t('download.downloadAgain')}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDownloadModal(false)}
+                  className={`${downloadStatus === 'downloading' ? 'flex-1' : ''} py-3.5 px-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-medium transition-all`}
+                  disabled={downloadStatus === 'downloading'}
+                >
+                  {downloadStatus === 'downloading' ? t('download.pleaseWait') : t('common.close')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
