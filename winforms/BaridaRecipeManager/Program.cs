@@ -10,6 +10,13 @@ namespace BaridaRecipeManager
         public const string CREATOR = "Eymen Gözel";
         public const string CREATOR_TITLE = "Otomasyon ve Yazılım Sorumlusu";
         public const string PRODUCTION_URL = "https://barida.xyz";
+        public const string API_URL = "https://barida.xyz/api";
+        
+        // Stores the latest version info from API
+        public static string LatestVersion = APP_VERSION;
+        public static string UpdateNote = null;
+        public static DateTime? UpdateReleasedAt = null;
+        public static bool HasNewUpdate = false;
 
         [STAThread]
         static void Main()

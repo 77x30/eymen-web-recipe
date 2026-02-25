@@ -153,10 +153,23 @@ sequelize.authenticate()
   .then(async () => {
     console.log('Database connection established');
     
-    // Sync only new tables (SystemUpdate, AppTelemetry)
+    // Force create SystemUpdate and AppTelemetry tables if they don't exist
     const { SystemUpdate, AppTelemetry } = require('./models');
-    await SystemUpdate.sync({ alter: false });
-    await AppTelemetry.sync({ alter: false });
+    
+    // Create tables if they don't exist (force: false means don't drop existing)
+    try {
+      await SystemUpdate.sync({ force: false });
+      console.log('SystemUpdate table ready');
+    } catch (err) {
+      console.log('SystemUpdate sync error (table may already exist):', err.message);
+    }
+    
+    try {
+      await AppTelemetry.sync({ force: false });
+      console.log('AppTelemetry table ready');
+    } catch (err) {
+      console.log('AppTelemetry sync error (table may already exist):', err.message);
+    }
     
     await cleanupMockRecipes();
     await seedDatabase();

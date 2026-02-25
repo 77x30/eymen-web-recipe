@@ -15,12 +15,13 @@ namespace BaridaRecipeManager
         private string[] statusMessages = new string[]
         {
             "Başlatılıyor...",
+            "Sunucu bağlantısı kontrol ediliyor...",
             "Güncellemeler denetleniyor...",
-            "Sistem hazırlanıyor...",
-            "Bağlantı kuruluyor..."
+            "Sistem hazırlanıyor..."
         };
         private int currentMessageIndex = 0;
         private float loadingBarPosition = 0;
+        private string displayVersion = Program.APP_VERSION;
 
         public SplashForm()
         {
@@ -42,8 +43,8 @@ namespace BaridaRecipeManager
             // Start loading sequence
             Task.Run(async () =>
             {
-                await CheckForUpdates();
-                await Task.Delay(2500);
+                await CheckForUpdatesFromAPI();
+                await Task.Delay(2000);
                 
                 this.Invoke((Action)(() =>
                 {
@@ -54,22 +55,50 @@ namespace BaridaRecipeManager
             });
         }
 
-        private async Task CheckForUpdates()
+        private async Task CheckForUpdatesFromAPI()
         {
             try
             {
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(5);
-                    var response = await client.GetStringAsync("https://raw.githubusercontent.com/77x30/eymen-web-recipe/main/version.json");
+                    
+                    // Fetch version from our API
+                    var response = await client.GetStringAsync($"{Program.API_URL}/system/version");
                     var json = JObject.Parse(response);
+                    
                     var latestVersion = json["version"]?.ToString();
-                    // Version check logic here if needed
+                    var note = json["note"]?.ToString();
+                    var releasedAt = json["released_at"]?.ToString();
+                    
+                    if (!string.IsNullOrEmpty(latestVersion))
+                    {
+                        Program.LatestVersion = latestVersion;
+                        Program.UpdateNote = note;
+                        
+                        if (!string.IsNullOrEmpty(releasedAt))
+                        {
+                            Program.UpdateReleasedAt = DateTime.Parse(releasedAt);
+                        }
+                        
+                        // Check if this is a new version compared to local
+                        if (latestVersion != Program.APP_VERSION)
+                        {
+                            Program.HasNewUpdate = true;
+                        }
+                        
+                        // Update display version
+                        this.Invoke((Action)(() =>
+                        {
+                            displayVersion = latestVersion;
+                            this.Invalidate();
+                        }));
+                    }
                 }
             }
             catch
             {
-                // Silently ignore update check errors
+                // Silently ignore - use default version
             }
         }
 
@@ -174,11 +203,11 @@ namespace BaridaRecipeManager
                 g.DrawString(text, font, brush, (this.Width - size.Width) / 2, this.Height - 55);
             }
 
-            // Version
+            // Version - show from API
             using (var font = new Font("Segoe UI", 9))
             using (var brush = new SolidBrush(Color.FromArgb(100, 255, 255, 255)))
             {
-                var text = $"v{Program.APP_VERSION}";
+                var text = $"v{displayVersion}";
                 var size = g.MeasureString(text, font);
                 g.DrawString(text, font, brush, (this.Width - size.Width) / 2, this.Height - 35);
             }

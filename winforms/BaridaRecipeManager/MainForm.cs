@@ -15,7 +15,8 @@ namespace BaridaRecipeManager
         private Panel loadingOverlay;
         private Label loadingLabel;
         private Timer updateCheckTimer;
-        private string lastContentHash = "";
+        private string lastKnownVersion = "";
+        private bool hasShownWhatsNew = false;
 
         public MainForm()
         {
@@ -48,12 +49,43 @@ namespace BaridaRecipeManager
 
                 // Navigate to production URL
                 webView.CoreWebView2.Navigate(Program.PRODUCTION_URL);
+                
+                // Show What's New dialog if there's a new update
+                if (Program.HasNewUpdate && !hasShownWhatsNew)
+                {
+                    hasShownWhatsNew = true;
+                    ShowWhatsNewDialog();
+                }
+                
+                // Store current version
+                lastKnownVersion = Program.LatestVersion;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"WebView2 başlatılamadı: {ex.Message}\n\nWebView2 Runtime yüklü olduğundan emin olun.",
                     "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ShowWhatsNewDialog()
+        {
+            // Show on UI thread with slight delay
+            var timer = new Timer();
+            timer.Interval = 500;
+            timer.Tick += (s, e) =>
+            {
+                timer.Stop();
+                timer.Dispose();
+                
+                using (var form = new WhatsNewForm(
+                    Program.LatestVersion,
+                    Program.UpdateNote,
+                    Program.UpdateReleasedAt))
+                {
+                    form.ShowDialog(this);
+                }
+            };
+            timer.Start();
         }
 
         private void CoreWebView2_NavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
@@ -83,18 +115,30 @@ namespace BaridaRecipeManager
                 using (var client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(5);
-                    var response = await client.GetStringAsync($"{Program.PRODUCTION_URL}/api/health");
+                    var response = await client.GetStringAsync($"{Program.API_URL}/system/version");
                     var json = JObject.Parse(response);
-                    var buildVersion = json["buildVersion"]?.ToString() ?? "";
+                    var currentVersion = json["version"]?.ToString() ?? "";
+                    var note = json["note"]?.ToString();
 
-                    if (!string.IsNullOrEmpty(buildVersion) && buildVersion != lastContentHash && !string.IsNullOrEmpty(lastContentHash))
+                    // Check if version changed since last check
+                    if (!string.IsNullOrEmpty(currentVersion) && 
+                        !string.IsNullOrEmpty(lastKnownVersion) && 
+                        currentVersion != lastKnownVersion)
                     {
-                        lastContentHash = buildVersion;
-                        ShowLiveUpdateAnimation();
+                        lastKnownVersion = currentVersion;
+                        Program.LatestVersion = currentVersion;
+                        Program.UpdateNote = note;
+                        
+                        if (DateTime.TryParse(json["released_at"]?.ToString(), out var releasedAt))
+                        {
+                            Program.UpdateReleasedAt = releasedAt;
+                        }
+                        
+                        ShowLiveUpdateNotification(currentVersion, note);
                     }
-                    else if (string.IsNullOrEmpty(lastContentHash))
+                    else if (string.IsNullOrEmpty(lastKnownVersion))
                     {
-                        lastContentHash = buildVersion;
+                        lastKnownVersion = currentVersion;
                     }
                 }
             }
@@ -104,18 +148,18 @@ namespace BaridaRecipeManager
             }
         }
 
-        private void ShowLiveUpdateAnimation()
+        private void ShowLiveUpdateNotification(string version, string note)
         {
             if (this.InvokeRequired)
             {
-                this.Invoke((Action)ShowLiveUpdateAnimation);
+                this.Invoke((Action<string, string>)ShowLiveUpdateNotification, version, note);
                 return;
-            }   
+            }
 
-            ShowLoadingOverlay("Canlı Güncelleme\nYeni içerik yükleniyor...");
+            ShowLoadingOverlay($"🎉 Yeni Güncelleme: v{version}\n{note ?? "Yeni özellikler yükleniyor..."}");
 
             var reloadTimer = new Timer();
-            reloadTimer.Interval = 1500;
+            reloadTimer.Interval = 2000;
             reloadTimer.Tick += (s, e) =>
             {
                 reloadTimer.Stop();

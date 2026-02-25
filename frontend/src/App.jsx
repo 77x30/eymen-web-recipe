@@ -10,6 +10,7 @@ import NotFound from './pages/NotFound';
 import BiometricVerification from './pages/BiometricVerification';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
+import WhatsNewModal from './components/WhatsNewModal';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
@@ -80,38 +81,44 @@ function App() {
   // Subdomain - workspace with recipes
   if (isSubdomain) {
     return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={
-          <PrivateRoute>
-            <Layout />
-          </PrivateRoute>
-        }>
-          <Route index element={<Dashboard />} />
-          <Route path="recipes" element={<RecipeManager />} />
-          <Route path="recipes/:id" element={<RecipeManager />} />
-          <Route path="admin" element={<AdminPanel />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <>
+        <WhatsNewModal />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="recipes" element={<RecipeManager />} />
+            <Route path="recipes/:id" element={<RecipeManager />} />
+            <Route path="admin" element={<AdminPanel />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </>
     );
   }
 
   // Main domain (barida.xyz) or fallback - Admin dashboard only
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={
-        <PrivateRoute adminOnly>
-          <AdminLayout />
-        </PrivateRoute>
-      }>
-        <Route index element={<AdminDashboard />} />
-        <Route path="workspaces" element={<AdminPanel />} />
-        <Route path="users" element={<AdminPanel />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <WhatsNewModal />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <PrivateRoute adminOnly>
+            <AdminLayout />
+          </PrivateRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="workspaces" element={<AdminPanel />} />
+          <Route path="users" element={<AdminPanel />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 
