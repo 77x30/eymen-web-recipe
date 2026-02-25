@@ -12,7 +12,7 @@ const COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'
 export default function AdminDashboard() {
   const { user } = useAuth();
   const { addToast, removeToast } = useToast();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { isDark } = useTheme();
   const [workspaces, setWorkspaces] = useState([]);
   const [users, setUsers] = useState([]);
