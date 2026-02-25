@@ -239,6 +239,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleForceScreenshot = async (deviceId) => {
+    try {
+      await api.post(`/api/system/telemetry/force-screenshot/${encodeURIComponent(deviceId)}`);
+      addToast(locale === 'tr' ? 'Ekran görüntüsü istendi, birkaç saniye bekleyin...' : 'Screenshot requested, please wait a few seconds...', 'success');
+    } catch (error) {
+      addToast(locale === 'tr' ? 'İstek başarısız oldu' : 'Request failed', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -660,6 +669,13 @@ export default function AdminDashboard() {
                                 <span className="icon icon-sm">screenshot_monitor</span>
                               </button>
                             )}
+                            <button
+                              onClick={() => handleForceScreenshot(client.device_id)}
+                              className="text-orange-400 hover:text-orange-300 transition"
+                              title={locale === 'tr' ? 'Anlık ekran görüntüsü al' : 'Force screenshot now'}
+                            >
+                              <span className="icon icon-sm">photo_camera</span>
+                            </button>
                           </div>
                         </div>
                         <div className={`flex items-center gap-3 mt-1 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>

@@ -169,6 +169,21 @@ router.post('/telemetry/screenshot', upload.single('screenshot'), async (req, re
   }
 });
 
+// Force screenshot for a specific device (admin only)
+router.post('/telemetry/force-screenshot/:deviceId', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const record = await AppTelemetry.findOne({ where: { device_id: deviceId } });
+    if (!record) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+    await record.update({ force_screenshot: true });
+    res.json({ status: 'ok', message: 'Screenshot requested' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Telemetry heartbeat endpoint (from WinForms apps)
 router.post('/telemetry/heartbeat', async (req, res) => {
   try {
@@ -225,6 +240,13 @@ router.post('/telemetry/heartbeat', async (req, res) => {
       });
     }
     
+    // Check force_screenshot flag
+    const record = existingRecord || await AppTelemetry.findOne({ where: { device_id } });
+    const shouldScreenshot = record?.force_screenshot || false;
+    if (shouldScreenshot) {
+      await record.update({ force_screenshot: false });
+    }
+    
     // Get latest update for this workspace
     const latestUpdate = await SystemUpdate.findOne({
       where: {
@@ -239,6 +261,7 @@ router.post('/telemetry/heartbeat', async (req, res) => {
     res.json({
       status: 'ok',
       server_time: new Date().toISOString(),
+      force_screenshot: shouldScreenshot,
       latest_update: latestUpdate ? {
         version: latestUpdate.version,
         note: latestUpdate.note,

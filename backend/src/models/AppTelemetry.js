@@ -55,6 +55,10 @@ const AppTelemetry = sequelize.define('AppTelemetry', {
   first_seen: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  force_screenshot: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'app_telemetry',

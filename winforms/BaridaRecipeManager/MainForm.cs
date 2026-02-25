@@ -185,6 +185,14 @@ namespace BaridaRecipeManager
                     {
                         var responseBody = await response.Content.ReadAsStringAsync();
                         var json = JObject.Parse(responseBody);
+                        
+                        // Check force_screenshot flag
+                        var forceScreenshot = json["force_screenshot"]?.Value<bool>() ?? false;
+                        if (forceScreenshot)
+                        {
+                            CaptureScreenshot();
+                        }
+                        
                         var latestUpdate = json["latest_update"];
                         
                         if (latestUpdate != null && latestUpdate.Type != JTokenType.Null)
@@ -238,6 +246,14 @@ namespace BaridaRecipeManager
                     }
                 }
                 
+                // Verify downloaded file exists and has content
+                var fileInfo = new FileInfo(newExePath);
+                if (!fileInfo.Exists || fileInfo.Length < 100000)
+                {
+                    isUpdating = false;
+                    return;
+                }
+                
                 // Save installed version
                 var versionDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -245,41 +261,45 @@ namespace BaridaRecipeManager
                 Directory.CreateDirectory(versionDir);
                 File.WriteAllText(Path.Combine(versionDir, "installed_version.txt"), newVersion);
                 
-                // Create update batch script with retry logic
                 var currentExe = Application.ExecutablePath;
-                var batchPath = Path.Combine(Path.GetTempPath(), "barida_update.bat");
-                var batchContent = $@"@echo off
-timeout /t 3 /nobreak > nul
-:retry
-copy /y ""{newExePath}"" ""{currentExe}"" >nul 2>&1
-if errorlevel 1 (
-    timeout /t 2 /nobreak > nul
-    goto retry
-)
-start """" ""{currentExe}""
-del ""{newExePath}"" >nul 2>&1
-del ""%~f0"" >nul 2>&1
-";
-                File.WriteAllText(batchPath, batchContent);
+                var currentPid = Process.GetCurrentProcess().Id;
+                
+                // Write PowerShell update script to temp file
+                var psPath = Path.Combine(Path.GetTempPath(), "barida_update.ps1");
+                var psContent = "$ErrorActionPreference = 'SilentlyContinue'\r\n"
+                    + $"try {{ Wait-Process -Id {currentPid} -Timeout 30 }} catch {{ }}\r\n"
+                    + "Start-Sleep -Seconds 1\r\n"
+                    + "for ($i = 0; $i -lt 10; $i++) {\r\n"
+                    + $"    try {{ Copy-Item -Path '{newExePath.Replace("'", "''")}' -Destination '{currentExe.Replace("'", "''")}' -Force; break }}\r\n"
+                    + "    catch { Start-Sleep -Seconds 2 }\r\n"
+                    + "}\r\n"
+                    + $"Start-Process -FilePath '{currentExe.Replace("'", "''")}'\r\n"
+                    + $"Remove-Item -Path '{newExePath.Replace("'", "''")}' -Force\r\n"
+                    + $"Remove-Item -Path '{psPath.Replace("'", "''")}' -Force\r\n";
+                File.WriteAllText(psPath, psContent);
                 
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = batchPath,
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"{psPath}\"",
                     WindowStyle = ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
-                    UseShellExecute = true
+                    UseShellExecute = false
                 });
                 
-                // Dispose WebView2 to release file locks, then exit on UI thread
+                // Dispose WebView2 and force exit
+                telemetryTimer?.Stop();
+                telemetryTimer?.Dispose();
+                screenshotTimer?.Stop();
+                screenshotTimer?.Dispose();
+                
                 if (webView != null)
                 {
-                    try { webView.Dispose(); } catch { }
+                    try { webView.Dispose(); webView = null; } catch { }
                 }
                 
-                if (this.InvokeRequired)
-                    this.BeginInvoke(new Action(() => Application.Exit()));
-                else
-                    Application.Exit();
+                // Force process exit
+                Process.GetCurrentProcess().Kill();
             }
             catch
             {
