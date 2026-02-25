@@ -25,7 +25,7 @@ jobs:
     
     - name: Restore NuGet packages
       working-directory: winforms/BaridaRecipeManager
-      run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory packages
+      run: nuget restore BaridaRecipeManager.csproj -PackagesDirectory ../packages
     
     - name: Build WinForms Application
       working-directory: winforms/BaridaRecipeManager
@@ -46,9 +46,15 @@ jobs:
         # Copy single exe (Costura.Fody embeds all DLLs)
         Copy-Item "winforms/BaridaRecipeManager/bin/Release/BaridaRecipeManager.exe" "frontend/public/downloads/BaridaRecipeManager.exe" -Force
         
-        # Show file size
+        # Show file size and verify Costura embedded DLLs
         $size = (Get-Item "frontend/public/downloads/BaridaRecipeManager.exe").Length / 1MB
         echo "Exe size: $([math]::Round($size, 2)) MB"
+        
+        if ($size -lt 1) {
+          echo "::warning::EXE is smaller than 1 MB - Costura.Fody may not have embedded DLLs!"
+          # List bin/Release contents for debugging
+          Get-ChildItem "winforms/BaridaRecipeManager/bin/Release/" -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
+        }
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

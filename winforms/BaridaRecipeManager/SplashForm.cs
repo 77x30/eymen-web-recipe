@@ -78,7 +78,7 @@ namespace BaridaRecipeManager
                     {
                         var newVersion = json["version"]?.Value<string>() ?? "latest";
                         var downloadUrl = json["download_url"]?.Value<string>() 
-                            ?? $"{Program.PRODUCTION_URL}/downloads/BaridaRecipeManager-Setup.exe";
+                            ?? $"{Program.PRODUCTION_URL}/downloads/BaridaRecipeManager.exe";
                         var releaseNotes = json["release_notes"]?.Value<string>() ?? "";
                         
                         displayVersion = newVersion;

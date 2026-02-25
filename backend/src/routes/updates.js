@@ -79,7 +79,7 @@ router.get('/check', async (req, res) => {
     res.json({
       hasUpdate: needsUpdate,
       version: update.version,
-      download_url: update.download_url || 'https://barida.xyz/downloads/BaridaRecipeManager-Setup.exe',
+      download_url: update.download_url || 'https://barida.xyz/downloads/BaridaRecipeManager.exe',
       release_notes: update.note,
       is_mandatory: update.is_mandatory || false,
       file_size: update.file_size || 0
@@ -104,7 +104,7 @@ router.post('/', async (req, res) => {
     // Create new update
     const update = await SystemUpdate.create({
       version,
-      download_url: download_url || 'https://barida.xyz/downloads/BaridaRecipeManager-Setup.exe',
+      download_url: download_url || 'https://barida.xyz/downloads/BaridaRecipeManager.exe',
       note,
       is_mandatory: is_mandatory || false,
       target_workspaces: target_workspaces ? JSON.stringify(target_workspaces) : null,
