@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 const workspaceRoutes = require('./routes/workspaces');
 const telemetryRoutes = require('./routes/telemetry');
 const updatesRoutes = require('./routes/updates');
+const analyticsRoutes = require('./routes/analytics');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/system', telemetryRoutes);
 app.use('/api/updates', updatesRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check with uptime
 app.get('/api/health', (req, res) => {
