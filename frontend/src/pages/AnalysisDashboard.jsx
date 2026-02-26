@@ -79,17 +79,24 @@ export default function AnalysisDashboard() {
       </div>
     );
 
+    const demoNotice = data._demo ? (
+      <div className={`mb-3 px-4 py-2 rounded-lg text-xs flex items-center gap-2 ${isDark ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+        <span className="icon icon-sm">science</span>
+        {tr ? 'Demo veriler gösteriliyor. Gerçek üretim verileri oluşturulduğunda otomatik olarak güncellenecektir.' : 'Showing demo data. Will auto-update when real production data is created.'}
+      </div>
+    ) : null;
+
     switch (activeSection) {
-      case 'daily-production': return renderDailyProduction();
-      case 'production-analysis': return renderProductionAnalysis();
-      case 'employee-performance': return renderEmployeePerformance();
-      case 'machine-utilization': return renderMachineUtilization();
-      case 'cycle-time': return renderCycleTime();
-      case 'breakdown-downtime': return renderBreakdownDowntime();
-      case 'quality-analysis': return renderQualityAnalysis();
-      case 'raw-materials': return renderRawMaterials();
-      case 'kpi-analysis': return renderKPI();
-      case 'planned-vs-actual': return renderPlannedVsActual();
+      case 'daily-production': return <>{demoNotice}{renderDailyProduction()}</>;
+      case 'production-analysis': return <>{demoNotice}{renderProductionAnalysis()}</>;
+      case 'employee-performance': return <>{demoNotice}{renderEmployeePerformance()}</>;
+      case 'machine-utilization': return <>{demoNotice}{renderMachineUtilization()}</>;
+      case 'cycle-time': return <>{demoNotice}{renderCycleTime()}</>;
+      case 'breakdown-downtime': return <>{demoNotice}{renderBreakdownDowntime()}</>;
+      case 'quality-analysis': return <>{demoNotice}{renderQualityAnalysis()}</>;
+      case 'raw-materials': return <>{demoNotice}{renderRawMaterials()}</>;
+      case 'kpi-analysis': return <>{demoNotice}{renderKPI()}</>;
+      case 'planned-vs-actual': return <>{demoNotice}{renderPlannedVsActual()}</>;
       default: return null;
     }
   };

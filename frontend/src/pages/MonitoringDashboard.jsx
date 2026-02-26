@@ -322,6 +322,12 @@ export default function MonitoringDashboard() {
 
       {activeTab === 'quality' && (
         <div className="space-y-4">
+          {oeeData?._demo && (
+            <div className={`px-4 py-2 rounded-lg text-xs flex items-center gap-2 ${isDark ? 'bg-amber-900/30 text-amber-300' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+              <span className="icon icon-sm">science</span>
+              {tr ? 'Demo veriler gösteriliyor' : 'Showing demo data'}
+            </div>
+          )}
           {oeeData?.daily?.length > 0 ? (
             <>
               <div className={`${card()} p-5`}>
