@@ -31,7 +31,7 @@ export default function Layout() {
   return (
     <div className={`min-h-screen flex flex-col transition-colors ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       {/* Header - Fixed */}
-      <header className={`shadow-lg sticky top-0 z-50 ${isDark ? 'bg-gradient-to-r from-gray-900 to-gray-800' : 'bg-gradient-to-r from-gray-800 to-gray-900'} text-white`}>
+      <header className={`shadow-lg sticky top-0 z-40 ${isDark ? 'bg-gradient-to-r from-gray-900 to-gray-800' : 'bg-gradient-to-r from-gray-800 to-gray-900'} text-white`}>
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function Layout() {
       </main>
 
       {/* Footer - Fixed */}
-      <footer className="bg-gray-800 text-gray-400 py-3 fixed bottom-0 left-0 right-0 z-40 shadow-lg border-t border-gray-700">
+      <footer className="bg-gray-800 text-gray-400 py-3 fixed bottom-0 left-0 right-0 z-30 shadow-lg border-t border-gray-700">
         <div className="container mx-auto px-4 flex justify-between items-center text-sm">
           <div className="flex items-center gap-4">
             <span>{t('footer.copyright')}</span>
