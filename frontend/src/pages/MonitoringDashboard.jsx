@@ -28,7 +28,7 @@ export default function MonitoringDashboard() {
   useEffect(() => {
     const fetchLive = async () => {
       try {
-        const res = await api.get('/api/analytics/monitoring/live');
+        const res = await api.get('/analytics/monitoring/live');
         setLiveData(res.data);
         // Keep last 30 data points for history chart
         const point = {
@@ -48,7 +48,7 @@ export default function MonitoringDashboard() {
   }, []);
 
   useEffect(() => {
-    api.get('/api/analytics/monitoring/oee?days=7')
+    api.get('/analytics/monitoring/oee?days=7')
       .then(res => setOeeData(res.data))
       .catch(() => {});
   }, []);
@@ -395,7 +395,7 @@ export default function MonitoringDashboard() {
                 </div>
                 <button onClick={async () => {
                   try {
-                    const res = await api.get('/api/analytics/production/daily?days=1');
+                    const res = await api.get('/analytics/production/daily?days=1');
                     const data = res.data;
                     const csv = `Date,Records\n${(data.daily || []).map(d => `${d.date},${d.count}`).join('\n')}`;
                     const blob = new Blob([csv], { type: 'text/csv' });
@@ -418,7 +418,7 @@ export default function MonitoringDashboard() {
                 </div>
                 <button onClick={async () => {
                   try {
-                    const res = await api.get('/api/analytics/quality?days=30');
+                    const res = await api.get('/analytics/quality?days=30');
                     const elements = res.data.elements || [];
                     const csv = `Parameter,Recipe,Min,Max,Avg,StdDev,DefectRate\n${elements.map(e => `${e.elementName},${e.recipeName},${e.minValue ?? ''},${e.maxValue ?? ''},${e.avg},${e.stdDev},${e.defectRate}%`).join('\n')}`;
                     const blob = new Blob([csv], { type: 'text/csv' });
@@ -441,7 +441,7 @@ export default function MonitoringDashboard() {
                 </div>
                 <button onClick={async () => {
                   try {
-                    const res = await api.get('/api/analytics/employees?days=30');
+                    const res = await api.get('/analytics/employees?days=30');
                     const users = res.data.userProduction || [];
                     const csv = `User,Records\n${users.map(u => `${u['creator.username'] || u.created_by},${u.recordCount}`).join('\n')}`;
                     const blob = new Blob([csv], { type: 'text/csv' });
@@ -464,7 +464,7 @@ export default function MonitoringDashboard() {
                 </div>
                 <button onClick={async () => {
                   try {
-                    const res = await api.get('/api/analytics/planned-vs-actual?days=30');
+                    const res = await api.get('/analytics/planned-vs-actual?days=30');
                     const comps = res.data.comparisons || [];
                     const csv = `Recipe,Parameter,Unit,Planned,Actual,Deviation%,Samples\n${comps.map(c => `${c.recipeName},${c.elementName},${c.unit || ''},${c.planned},${c.actual},${c.deviation}%,${c.sampleCount}`).join('\n')}`;
                     const blob = new Blob([csv], { type: 'text/csv' });

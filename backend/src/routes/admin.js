@@ -279,21 +279,28 @@ router.delete('/users/:id', authorize('admin', 'sub_admin'), async (req, res) =>
 // Get system stats
 router.get('/stats', authorize('admin', 'sub_admin'), async (req, res) => {
   try {
-    let userCount, workspaceCount;
+    let userCount, workspaceCount, recipeCount, recordCount;
     
     if (req.user.role === 'sub_admin') {
       // sub_admin only sees their workspace stats
       userCount = await User.count({ where: { workspace_id: req.user.workspace_id } });
       workspaceCount = 1;
+      recipeCount = await Recipe.count({ where: { workspace_id: req.user.workspace_id } });
+      recordCount = await DataRecord.count({
+        include: [{
+          model: Recipe,
+          required: true,
+          where: { workspace_id: req.user.workspace_id }
+        }]
+      });
     } else {
       userCount = await User.count();
       workspaceCount = await Workspace.count();
+      [recipeCount, recordCount] = await Promise.all([
+        Recipe.count(),
+        DataRecord.count()
+      ]);
     }
-    
-    const [recipeCount, recordCount] = await Promise.all([
-      Recipe.count(),
-      DataRecord.count()
-    ]);
 
     res.json({
       users: userCount,

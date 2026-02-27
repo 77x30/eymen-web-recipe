@@ -16,6 +16,10 @@ const Recipe = sequelize.define('Recipe', {
   },
   created_by: {
     type: DataTypes.INTEGER
+  },
+  workspace_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   tableName: 'recipes',

@@ -241,7 +241,7 @@ export default function AdminDashboard() {
 
   const handleForceScreenshot = async (deviceId) => {
     try {
-      await api.post(`/api/system/telemetry/force-screenshot/${encodeURIComponent(deviceId)}`);
+      await api.post(`/system/telemetry/force-screenshot/${encodeURIComponent(deviceId)}`);
       addToast(locale === 'tr' ? 'Ekran görüntüsü istendi, birkaç saniye bekleyin...' : 'Screenshot requested, please wait a few seconds...', 'success');
     } catch (error) {
       addToast(locale === 'tr' ? 'İstek başarısız oldu' : 'Request failed', 'error');

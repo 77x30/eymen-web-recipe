@@ -44,16 +44,16 @@ export default function AnalysisDashboard() {
     setLoading(true);
     setData(null);
     const endpoints = {
-      'daily-production': `/api/analytics/production/daily?days=${period}`,
-      'production-analysis': `/api/analytics/production/analysis?days=${period}`,
-      'employee-performance': `/api/analytics/employees?days=${period}`,
-      'machine-utilization': `/api/analytics/machines?days=${period}`,
-      'cycle-time': `/api/analytics/production/analysis?days=${period}`,
-      'breakdown-downtime': `/api/analytics/monitoring/oee?days=${period}`,
-      'quality-analysis': `/api/analytics/quality?days=${period}`,
-      'raw-materials': `/api/analytics/quality?days=${period}`,
-      'kpi-analysis': `/api/analytics/kpi?days=${period}`,
-      'planned-vs-actual': `/api/analytics/planned-vs-actual?days=${period}`,
+      'daily-production': `/analytics/production/daily?days=${period}`,
+      'production-analysis': `/analytics/production/analysis?days=${period}`,
+      'employee-performance': `/analytics/employees?days=${period}`,
+      'machine-utilization': `/analytics/machines?days=${period}`,
+      'cycle-time': `/analytics/production/analysis?days=${period}`,
+      'breakdown-downtime': `/analytics/monitoring/oee?days=${period}`,
+      'quality-analysis': `/analytics/quality?days=${period}`,
+      'raw-materials': `/analytics/quality?days=${period}`,
+      'kpi-analysis': `/analytics/kpi?days=${period}`,
+      'planned-vs-actual': `/analytics/planned-vs-actual?days=${period}`,
     };
     api.get(endpoints[activeSection])
       .then(res => setData(res.data))

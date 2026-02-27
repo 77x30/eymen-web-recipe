@@ -1,16 +1,56 @@
 const express = require('express');
-const { Recipe, RecipeElement, DataRecord, RecordValue } = require('../models');
+const { Recipe, RecipeElement, DataRecord, RecordValue, Workspace } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
+const isAdmin = (user) => user.role === 'admin';
+
+function ensureWorkspaceAccess(user, res) {
+  if (!isAdmin(user) && !user.workspace_id) {
+    res.status(403).json({ error: 'Workspace access required' });
+    return false;
+  }
+  return true;
+}
+
+function sortRecipeElements(recipe) {
+  if (recipe?.elements) {
+    recipe.elements.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  }
+}
+
+async function getRecipeOr404(recipeId) {
+  return Recipe.findByPk(recipeId, {
+    include: [{ model: RecipeElement, as: 'elements' }]
+  });
+}
+
+function canAccessRecipe(recipe, user) {
+  return isAdmin(user) || recipe.workspace_id === user.workspace_id;
+}
+
 // Get all recipes
 router.get('/', authenticate, async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
+    const where = {};
+    if (isAdmin(req.user)) {
+      if (req.query.workspace_id) {
+        where.workspace_id = parseInt(req.query.workspace_id, 10);
+      }
+    } else {
+      where.workspace_id = req.user.workspace_id;
+    }
+
     const recipes = await Recipe.findAll({
-      include: [{ model: RecipeElement, as: 'elements', order: [['sort_order', 'ASC']] }],
+      where,
+      include: [{ model: RecipeElement, as: 'elements' }],
       order: [['name', 'ASC']]
     });
+
+    recipes.forEach(sortRecipeElements);
     res.json(recipes);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -20,12 +60,17 @@ router.get('/', authenticate, async (req, res) => {
 // Get single recipe with elements
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const recipe = await Recipe.findByPk(req.params.id, {
-      include: [{ model: RecipeElement, as: 'elements', order: [['sort_order', 'ASC']] }]
-    });
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
+    const recipe = await getRecipeOr404(req.params.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    sortRecipeElements(recipe);
     res.json(recipe);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -35,12 +80,28 @@ router.get('/:id', authenticate, async (req, res) => {
 // Create recipe
 router.post('/', authenticate, authorize('admin', 'operator'), async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
     const { name, description, elements } = req.body;
-    
+
+    let workspaceId = null;
+    if (isAdmin(req.user)) {
+      workspaceId = req.body.workspace_id || null;
+      if (workspaceId) {
+        const workspace = await Workspace.findByPk(workspaceId);
+        if (!workspace) {
+          return res.status(400).json({ error: 'Workspace not found' });
+        }
+      }
+    } else {
+      workspaceId = req.user.workspace_id;
+    }
+
     const recipe = await Recipe.create({
       name,
       description,
-      created_by: req.user.id
+      created_by: req.user.id,
+      workspace_id: workspaceId
     });
 
     if (elements && elements.length > 0) {
@@ -52,10 +113,8 @@ router.post('/', authenticate, authorize('admin', 'operator'), async (req, res) 
       await RecipeElement.bulkCreate(elementData);
     }
 
-    const createdRecipe = await Recipe.findByPk(recipe.id, {
-      include: [{ model: RecipeElement, as: 'elements' }]
-    });
-
+    const createdRecipe = await getRecipeOr404(recipe.id);
+    sortRecipeElements(createdRecipe);
     res.status(201).json(createdRecipe);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -65,19 +124,22 @@ router.post('/', authenticate, authorize('admin', 'operator'), async (req, res) 
 // Update recipe
 router.put('/:id', authenticate, authorize('admin', 'operator'), async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
     const { name, description } = req.body;
     const recipe = await Recipe.findByPk(req.params.id);
-    
+
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     await recipe.update({ name, description });
-    
-    const updatedRecipe = await Recipe.findByPk(recipe.id, {
-      include: [{ model: RecipeElement, as: 'elements' }]
-    });
 
+    const updatedRecipe = await getRecipeOr404(recipe.id);
+    sortRecipeElements(updatedRecipe);
     res.json(updatedRecipe);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -87,9 +149,14 @@ router.put('/:id', authenticate, authorize('admin', 'operator'), async (req, res
 // Delete recipe
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
     const recipe = await Recipe.findByPk(req.params.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
+    }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     await recipe.destroy();
@@ -102,9 +169,14 @@ router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
 // Add element to recipe
 router.post('/:id/elements', authenticate, authorize('admin', 'operator'), async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
     const recipe = await Recipe.findByPk(req.params.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
+    }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     const element = await RecipeElement.create({
@@ -121,6 +193,16 @@ router.post('/:id/elements', authenticate, authorize('admin', 'operator'), async
 // Get records for recipe
 router.get('/:id/records', authenticate, async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
+    const recipe = await Recipe.findByPk(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const records = await DataRecord.findAll({
       where: { recipe_id: req.params.id },
       include: [{
@@ -139,9 +221,18 @@ router.get('/:id/records', authenticate, async (req, res) => {
 // Create data record
 router.post('/:id/records', authenticate, authorize('admin', 'operator'), async (req, res) => {
   try {
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
+    const recipe = await Recipe.findByPk(req.params.id);
+    if (!recipe) {
+      return res.status(404).json({ error: 'Recipe not found' });
+    }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const { name, values } = req.body;
-    
-    // Get next record number
+
     const lastRecord = await DataRecord.findOne({
       where: { recipe_id: req.params.id },
       order: [['record_number', 'DESC']]
@@ -156,7 +247,7 @@ router.post('/:id/records', authenticate, authorize('admin', 'operator'), async 
     });
 
     if (values && values.length > 0) {
-      const valueData = values.map(v => ({
+      const valueData = values.map((v) => ({
         data_record_id: dataRecord.id,
         element_id: v.element_id,
         value: v.value
@@ -181,33 +272,35 @@ router.post('/:id/records', authenticate, authorize('admin', 'operator'), async 
 // Export recipe as CSV
 router.get('/:id/export', authenticate, async (req, res) => {
   try {
-    const recipe = await Recipe.findByPk(req.params.id, {
-      include: [{ model: RecipeElement, as: 'elements', order: [['sort_order', 'ASC']] }]
-    });
-    
+    if (!ensureWorkspaceAccess(req.user, res)) return;
+
+    const recipe = await getRecipeOr404(req.params.id);
     if (!recipe) {
       return res.status(404).json({ error: 'Recipe not found' });
     }
+    if (!canAccessRecipe(recipe, req.user)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
+    sortRecipeElements(recipe);
     const records = await DataRecord.findAll({
       where: { recipe_id: req.params.id },
       include: [{ model: RecordValue, as: 'values' }],
       order: [['record_number', 'ASC']]
     });
 
-    // Build CSV
-    const headers = ['Record Name', 'Record Number', ...recipe.elements.map(e => e.name)];
-    const rows = records.map(record => {
+    const headers = ['Record Name', 'Record Number', ...recipe.elements.map((e) => e.name)];
+    const rows = records.map((record) => {
       const row = [record.name, record.record_number];
-      recipe.elements.forEach(element => {
-        const value = record.values.find(v => v.element_id === element.id);
+      recipe.elements.forEach((element) => {
+        const value = record.values.find((v) => v.element_id === element.id);
         row.push(value?.value || '');
       });
       return row;
     });
 
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${recipe.name}_export.csv"`);
     res.send(csv);

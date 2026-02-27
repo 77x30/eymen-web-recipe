@@ -1,15 +1,21 @@
 const express = require('express');
-const { RecipeElement } = require('../models');
+const { RecipeElement, Recipe } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 
 const router = express.Router();
+const isAdmin = (user) => user.role === 'admin';
 
 // Update element
 router.put('/:id', authenticate, authorize('admin', 'operator'), async (req, res) => {
   try {
-    const element = await RecipeElement.findByPk(req.params.id);
+    const element = await RecipeElement.findByPk(req.params.id, {
+      include: [{ model: Recipe, attributes: ['workspace_id'] }]
+    });
     if (!element) {
       return res.status(404).json({ error: 'Element not found' });
+    }
+    if (!isAdmin(req.user) && element.Recipe?.workspace_id !== req.user.workspace_id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     await element.update(req.body);
@@ -22,9 +28,14 @@ router.put('/:id', authenticate, authorize('admin', 'operator'), async (req, res
 // Delete element
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const element = await RecipeElement.findByPk(req.params.id);
+    const element = await RecipeElement.findByPk(req.params.id, {
+      include: [{ model: Recipe, attributes: ['workspace_id'] }]
+    });
     if (!element) {
       return res.status(404).json({ error: 'Element not found' });
+    }
+    if (!isAdmin(req.user) && element.Recipe?.workspace_id !== req.user.workspace_id) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     await element.destroy();

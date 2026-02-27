@@ -74,10 +74,7 @@ export default function AdminPanel() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/updates', {
-        ...newUpdate,
-        created_by: user?.id || 1
-      });
+      await api.post('/updates', newUpdate);
       setSuccess('Güncelleme yayınlandı!');
       setShowAddUpdate(false);
       setNewUpdate({ version: '', note: '', is_mandatory: false, target_workspaces: [] });

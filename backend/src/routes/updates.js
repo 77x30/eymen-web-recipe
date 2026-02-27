@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Op } = require('sequelize');
 const SystemUpdate = require('../models/SystemUpdate');
-const Workspace = require('../models/Workspace');
+const { authenticate, authorize } = require('../middleware/auth');
 
 // GitHub repo info
 const GITHUB_OWNER = '77x30';
@@ -90,10 +89,13 @@ router.get('/check', async (req, res) => {
   }
 });
 
+// Admin-only routes below
+router.use(authenticate, authorize('admin'));
+
 // Create new update (admin only)
 router.post('/', async (req, res) => {
   try {
-    const { version, download_url, note, is_mandatory, target_workspaces, file_size, created_by } = req.body;
+    const { version, download_url, note, is_mandatory, target_workspaces, file_size } = req.body;
     
     // Deactivate previous active updates
     await SystemUpdate.update(
@@ -110,7 +112,7 @@ router.post('/', async (req, res) => {
       target_workspaces: target_workspaces ? JSON.stringify(target_workspaces) : null,
       file_size: file_size || 0,
       is_active: true,
-      created_by: created_by || 1
+      created_by: req.user.id
     });
     
     res.json(update);
