@@ -250,7 +250,8 @@ router.post('/telemetry/screenshot', upload.single('screenshot'), async (req, re
       return res.status(400).json({ error: 'device_id and screenshot file required' });
     }
     
-    const screenshotUrl = `/api/system/screenshots/${req.file.filename}`;
+    // Keep path relative to axios baseURL (/api) to avoid /api/api double-prefix.
+    const screenshotUrl = `/system/screenshots/${req.file.filename}`;
     
     await AppTelemetry.update(
       { screenshot_url: screenshotUrl },

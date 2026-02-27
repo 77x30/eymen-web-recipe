@@ -216,11 +216,20 @@ export default function AdminDashboard() {
     }
   };
 
+  const normalizeScreenshotPath = (url) => {
+    if (!url) return url;
+    return url.startsWith('/api/') ? url.replace('/api', '') : url;
+  };
+
   const handleViewScreenshot = async (screenshotUrl) => {
     setSelectedScreenshot(screenshotUrl);
+    if (screenshotBlobUrl) {
+      URL.revokeObjectURL(screenshotBlobUrl);
+      setScreenshotBlobUrl(null);
+    }
     setLoadingScreenshot(true);
     try {
-      const response = await api.get(screenshotUrl, { responseType: 'blob' });
+      const response = await api.get(normalizeScreenshotPath(screenshotUrl), { responseType: 'blob' });
       const blobUrl = URL.createObjectURL(response.data);
       setScreenshotBlobUrl(blobUrl);
     } catch (error) {
@@ -967,7 +976,7 @@ export default function AdminDashboard() {
       {/* Screenshot Modal */}
       {selectedScreenshot && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeScreenshot}>
-          <div className={`relative max-w-4xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
+          <div className={`relative max-w-5xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
             <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 <span className="icon icon-sm mr-2">screenshot_monitor</span>
@@ -977,15 +986,17 @@ export default function AdminDashboard() {
                 <span className="icon">close</span>
               </button>
             </div>
-            <div className="p-2">
+            <div className="p-2 sm:p-3 max-h-[80vh] overflow-auto">
               {loadingScreenshot ? (
-                <div className="flex items-center justify-center py-20">
+                <div className="h-56 flex items-center justify-center">
                   <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
               ) : screenshotBlobUrl ? (
-                <img src={screenshotBlobUrl} alt="Client Screenshot" className="w-full h-auto rounded-lg" />
+                <div className={`rounded-lg ${isDark ? 'bg-gray-900' : 'bg-gray-100'} p-1`}>
+                  <img src={screenshotBlobUrl} alt="Client Screenshot" className="w-full h-auto max-h-[74vh] object-contain rounded-lg mx-auto" />
+                </div>
               ) : (
-                <div className={`text-center py-20 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <div className={`h-56 flex flex-col items-center justify-center text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <span className="icon text-4xl mb-2 block">broken_image</span>
                   <p>{locale === 'tr' ? 'Ekran görüntüsü yüklenemedi' : 'Screenshot could not be loaded'}</p>
                 </div>
