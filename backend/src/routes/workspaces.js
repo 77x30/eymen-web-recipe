@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Workspace, User, Recipe } = require('../models');
+const { Workspace, User } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Get all workspaces (admin only)
@@ -36,7 +36,16 @@ router.get('/subdomain/:subdomain', async (req, res) => {
 // Get single workspace
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const workspace = await Workspace.findByPk(req.params.id, {
+    const workspaceId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(workspaceId)) {
+      return res.status(400).json({ error: 'Invalid workspace id' });
+    }
+
+    if (req.user.role !== 'admin' && req.user.workspace_id !== workspaceId) {
+      return res.status(403).json({ error: 'Access denied to this workspace' });
+    }
+
+    const workspace = await Workspace.findByPk(workspaceId, {
       include: [{ model: User, as: 'creator', attributes: ['id', 'username'] }]
     });
     
@@ -148,14 +157,24 @@ router.post('/:id/test', authenticate, authorize('admin'), async (req, res) => {
 // Get workspace users (admin only - for Netflix-style user selection)
 router.get('/:id/users', authenticate, authorize('admin', 'sub_admin'), async (req, res) => {
   try {
-    const workspace = await Workspace.findByPk(req.params.id);
+    const workspaceId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(workspaceId)) {
+      return res.status(400).json({ error: 'Invalid workspace id' });
+    }
+
+    // sub_admin can only access their own workspace users
+    if (req.user.role === 'sub_admin' && req.user.workspace_id !== workspaceId) {
+      return res.status(403).json({ error: 'Access denied to this workspace' });
+    }
+
+    const workspace = await Workspace.findByPk(workspaceId);
     
     if (!workspace) {
       return res.status(404).json({ error: 'Workspace not found' });
     }
     
     const users = await User.findAll({
-      where: { workspace_id: req.params.id },
+      where: { workspace_id: workspaceId },
       attributes: ['id', 'username', 'role', 'biometric_verified', 'first_login', 'created_at'],
       order: [['username', 'ASC']]
     });

@@ -63,7 +63,7 @@ export default function AdminPanel() {
   
   const fetchUpdates = async () => {
     try {
-      const response = await api.get('/updates');
+      const response = await api.get('/system/updates');
       setUpdates(response.data);
     } catch (error) {
       console.error('Error fetching updates:', error);
@@ -74,7 +74,13 @@ export default function AdminPanel() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/updates', newUpdate);
+      await api.post('/system/updates', {
+        version: newUpdate.version,
+        note: newUpdate.note,
+        is_mandatory: newUpdate.is_mandatory,
+        target: newUpdate.target_workspaces?.length > 0 ? 'workspace' : 'global',
+        workspace_ids: newUpdate.target_workspaces
+      });
       setSuccess('Güncelleme yayınlandı!');
       setShowAddUpdate(false);
       setNewUpdate({ version: '', note: '', is_mandatory: false, target_workspaces: [] });
@@ -87,7 +93,7 @@ export default function AdminPanel() {
   const handleDeleteUpdate = async (id) => {
     if (!window.confirm('Bu güncellemeyi silmek istediğinize emin misiniz?')) return;
     try {
-      await api.delete(`/updates/${id}`);
+      await api.delete(`/system/updates/${id}`);
       setSuccess('Güncelleme silindi');
       fetchUpdates();
     } catch (error) {
@@ -98,7 +104,22 @@ export default function AdminPanel() {
   const handleEditUpdate = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/updates/${editingUpdate.id}`, editingUpdate);
+      let targetWorkspaces = editingUpdate.target_workspaces || [];
+      if (typeof targetWorkspaces === 'string') {
+        try {
+          targetWorkspaces = JSON.parse(targetWorkspaces);
+        } catch (err) {
+          targetWorkspaces = [];
+        }
+      }
+
+      await api.put(`/system/updates/${editingUpdate.id}`, {
+        version: editingUpdate.version,
+        note: editingUpdate.note,
+        is_mandatory: editingUpdate.is_mandatory,
+        is_active: editingUpdate.is_active,
+        target_workspaces: Array.isArray(targetWorkspaces) ? targetWorkspaces : []
+      });
       setSuccess('Güncelleme düzenlendi');
       setEditingUpdate(null);
       fetchUpdates();

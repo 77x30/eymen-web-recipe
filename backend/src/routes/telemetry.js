@@ -23,6 +23,32 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } });
 
+function normalizeTargetWorkspaces(target, workspaceIds, targetWorkspaces) {
+  let ids = null;
+
+  if (Array.isArray(targetWorkspaces)) {
+    ids = targetWorkspaces;
+  } else if (typeof targetWorkspaces === 'string') {
+    try {
+      const parsed = JSON.parse(targetWorkspaces);
+      if (Array.isArray(parsed)) {
+        ids = parsed;
+      }
+    } catch (err) {
+      ids = null;
+    }
+  } else if (target === 'workspace' && Array.isArray(workspaceIds)) {
+    ids = workspaceIds;
+  }
+
+  if (!ids || ids.length === 0) return null;
+  const normalized = ids
+    .map((id) => parseInt(id, 10))
+    .filter((id) => Number.isInteger(id));
+
+  return normalized.length > 0 ? JSON.stringify(normalized) : null;
+}
+
 // Serve screenshots
 router.get('/screenshots/:filename', authenticate, authorize('admin'), (req, res) => {
   const filepath = path.join(screenshotDir, req.params.filename);
@@ -50,24 +76,92 @@ router.get('/updates', authenticate, authorize('admin'), async (req, res) => {
 // Publish new update (admin only)
 router.post('/updates', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { version, note, target, workspace_ids } = req.body;
-    
-    // Store workspace_ids as JSON array for targeted updates
-    const targetWorkspaces = target === 'workspace' && workspace_ids?.length > 0 
-      ? JSON.stringify(workspace_ids) 
-      : null;
-    
+    const {
+      version,
+      note,
+      target,
+      workspace_ids,
+      target_workspaces,
+      is_mandatory,
+      download_url,
+      file_size
+    } = req.body;
+
+    const targetWorkspaces = normalizeTargetWorkspaces(target, workspace_ids, target_workspaces);
+
+    // Keep a single active update at a time.
+    await SystemUpdate.update(
+      { is_active: false },
+      { where: { is_active: true } }
+    );
+
     const update = await SystemUpdate.create({
       version: version || '1.0.0',
       note,
       target_workspaces: targetWorkspaces,
       created_by: req.user.id,
-      is_active: true
+      is_active: true,
+      is_mandatory: !!is_mandatory,
+      download_url: download_url || undefined,
+      file_size: file_size || 0
     });
     
     res.status(201).json(update);
   } catch (error) {
     console.error('Create update error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update an update (admin only)
+router.put('/updates/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const update = await SystemUpdate.findByPk(req.params.id);
+    if (!update) {
+      return res.status(404).json({ error: 'Update not found' });
+    }
+
+    const {
+      version,
+      note,
+      is_mandatory,
+      is_active,
+      download_url,
+      file_size,
+      target,
+      workspace_ids,
+      target_workspaces
+    } = req.body;
+
+    let nextTargetWorkspaces = update.target_workspaces;
+    if (
+      target !== undefined ||
+      workspace_ids !== undefined ||
+      target_workspaces !== undefined
+    ) {
+      nextTargetWorkspaces = normalizeTargetWorkspaces(target, workspace_ids, target_workspaces);
+    }
+
+    if (is_active === true) {
+      await SystemUpdate.update(
+        { is_active: false },
+        { where: { id: { [Op.ne]: update.id }, is_active: true } }
+      );
+    }
+
+    await update.update({
+      version: version ?? update.version,
+      note: note ?? update.note,
+      is_mandatory: is_mandatory ?? update.is_mandatory,
+      is_active: is_active ?? update.is_active,
+      download_url: download_url ?? update.download_url,
+      file_size: file_size ?? update.file_size,
+      target_workspaces: nextTargetWorkspaces
+    });
+
+    res.json(update);
+  } catch (error) {
+    console.error('Update update error:', error);
     res.status(500).json({ error: error.message });
   }
 });
