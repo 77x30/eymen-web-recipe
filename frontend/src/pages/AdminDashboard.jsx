@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -974,9 +975,9 @@ export default function AdminDashboard() {
       )}
 
       {/* Screenshot Modal */}
-      {selectedScreenshot && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={closeScreenshot}>
-          <div className={`relative z-[201] max-w-5xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
+      {selectedScreenshot && createPortal(
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={closeScreenshot}>
+          <div className={`relative max-w-5xl w-full rounded-2xl overflow-hidden shadow-2xl ${isDark ? 'bg-gray-800' : 'bg-white'}`} onClick={e => e.stopPropagation()}>
             <div className={`flex items-center justify-between p-4 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
               <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 <span className="icon icon-sm mr-2">screenshot_monitor</span>
@@ -1003,7 +1004,8 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
