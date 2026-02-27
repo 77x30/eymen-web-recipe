@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function AdminPanel() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const [users, setUsers] = useState([]);
   const [workspaces, setWorkspaces] = useState([]);
   const [systemStatus, setSystemStatus] = useState(null);
@@ -370,15 +372,17 @@ export default function AdminPanel() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {isSubAdmin ? 'Workspace Yönetimi' : 'Admin Panel'}
+        <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+          {isSubAdmin ? 'Çalışma Alanı Yönetimi' : 'Admin Panel'}
         </h1>
         {/* Tabs - sub_admin only sees limited tabs */}
-        <div className="flex bg-gray-200 rounded-lg p-1">
+        <div className={`flex rounded-lg p-1 ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>
           <button
             onClick={() => setActiveTab('users')}
             className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-              activeTab === 'users' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-800'
+              activeTab === 'users'
+                ? isDark ? 'bg-gray-700 shadow text-blue-300' : 'bg-white shadow text-blue-600'
+                : isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             <span className="icon icon-sm">group</span> Kullanıcılar
@@ -387,10 +391,12 @@ export default function AdminPanel() {
             <button
               onClick={() => setActiveTab('workspaces')}
               className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
-                activeTab === 'workspaces' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-800'
+                activeTab === 'workspaces'
+                  ? isDark ? 'bg-gray-700 shadow text-blue-300' : 'bg-white shadow text-blue-600'
+                  : isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
               }`}
             >
-              <span className="icon icon-sm">domain</span> Workspaces
+              <span className="icon icon-sm">domain</span> Çalışma Alanı
             </button>
           )}
         </div>
@@ -437,7 +443,7 @@ export default function AdminPanel() {
         <div className="bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-xl p-4 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-cyan-100 text-xs">Workspaces</p>
+              <p className="text-cyan-100 text-xs">Çalışma Alanı</p>
               <p className="text-xl font-bold">{workspaces.length}</p>
             </div>
             <span className="icon">domain</span>
@@ -794,83 +800,87 @@ export default function AdminPanel() {
       {/* Workspaces Tab */}
       {activeTab === 'workspaces' && (
       <>
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden`}>
         <div className="bg-gradient-to-r from-cyan-600 to-cyan-700 px-6 py-4 flex justify-between items-center">
           <h2 className="text-white font-semibold flex items-center gap-2">
-            <span className="icon icon-sm">domain</span> Workspace Yönetimi
+            <span className="icon icon-sm">domain</span> Çalışma Alanı Yönetimi
           </h2>
           <button
             onClick={() => setShowAddWorkspace(!showAddWorkspace)}
             className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1"
           >
-            <span className="icon icon-sm">add</span> Yeni Workspace
+            <span className="icon icon-sm">add</span> Yeni Çalışma Alanı
           </button>
         </div>
 
         {/* Add Workspace Form */}
         {showAddWorkspace && (
-          <div className="p-4 bg-gray-50 border-b">
+          <div className={`p-4 border-b ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-gray-50'}`}>
             <form onSubmit={handleAddWorkspace} className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Workspace Adı</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Çalışma Alanı Adı</label>
                 <input
                   type="text"
                   value={newWorkspace.name}
                   onChange={(e) => setNewWorkspace({...newWorkspace, name: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500' : ''}`}
                   placeholder="Örn: Fabrika 1"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subdomain</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Subdomain</label>
                 <div className="flex">
                   <input
                     type="text"
                     value={newWorkspace.subdomain}
                     onChange={(e) => setNewWorkspace({...newWorkspace, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})}
-                    className="flex-1 px-3 py-2 border rounded-l-lg"
+                    className={`flex-1 px-3 py-2 border rounded-l-lg ${isDark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500' : ''}`}
                     placeholder="fabrika1"
                     required
                   />
-                  <span className="px-3 py-2 bg-gray-200 border border-l-0 rounded-r-lg text-gray-600 text-sm">.barida.xyz</span>
+                  <span className={`px-3 py-2 border border-l-0 rounded-r-lg text-sm ${isDark ? 'bg-gray-700 border-gray-600 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>.barida.xyz</span>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Şirket</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Şirket</label>
                 <input
                   type="text"
                   value={newWorkspace.company}
                   onChange={(e) => setNewWorkspace({...newWorkspace, company: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500' : ''}`}
                   placeholder="Şirket adı"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lokasyon</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Lokasyon</label>
                 <input
                   type="text"
                   value={newWorkspace.location}
                   onChange={(e) => setNewWorkspace({...newWorkspace, location: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500' : ''}`}
                   placeholder="İstanbul, Türkiye"
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Açıklama</label>
                 <textarea
                   value={newWorkspace.description}
                   onChange={(e) => setNewWorkspace({...newWorkspace, description: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className={`w-full px-3 py-2 border rounded-lg ${isDark ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-500' : ''}`}
                   rows="2"
-                  placeholder="Workspace açıklaması..."
+                  placeholder="Çalışma alanı açıklaması..."
                 />
               </div>
               <div className="col-span-2 flex gap-2">
                 <button type="submit" className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2 rounded-lg font-medium">
                   Oluştur
                 </button>
-                <button type="button" onClick={() => setShowAddWorkspace(false)} className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-lg font-medium">
+                <button
+                  type="button"
+                  onClick={() => setShowAddWorkspace(false)}
+                  className={`${isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-300 hover:bg-gray-400 text-gray-700'} px-6 py-2 rounded-lg font-medium`}
+                >
                   İptal
                 </button>
               </div>
@@ -884,12 +894,12 @@ export default function AdminPanel() {
             {workspaces.map((workspace) => {
               const workspaceUsers = users.filter(u => u.workspace_id === workspace.id);
               return (
-              <div key={workspace.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-cyan-300 transition">
+              <div key={workspace.id} className={`${isDark ? 'bg-gray-900/50 border-gray-700 hover:border-cyan-500' : 'bg-gray-50 border-gray-200 hover:border-cyan-300'} rounded-xl p-4 border-2 transition`}>
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-bold text-gray-800">{workspace.name}</h3>
+                    <h3 className={`font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{workspace.name}</h3>
                     <a href={`https://${workspace.subdomain}.barida.xyz`} target="_blank" rel="noopener noreferrer" 
-                      className="text-cyan-600 text-sm hover:underline flex items-center gap-1">
+                      className={`${isDark ? 'text-cyan-400' : 'text-cyan-600'} text-sm hover:underline flex items-center gap-1`}>
                       <span className="icon icon-sm">link</span>
                       {workspace.subdomain}.barida.xyz
                     </a>
@@ -898,9 +908,9 @@ export default function AdminPanel() {
                     value={workspace.status}
                     onChange={(e) => handleWorkspaceStatusChange(workspace.id, e.target.value)}
                     className={`px-2 py-1 rounded text-xs font-medium ${
-                      workspace.status === 'active' ? 'bg-green-100 text-green-700' :
-                      workspace.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
+                      workspace.status === 'active' ? isDark ? 'bg-green-900/30 text-green-300' : 'bg-green-100 text-green-700' :
+                      workspace.status === 'maintenance' ? isDark ? 'bg-yellow-900/30 text-yellow-300' : 'bg-yellow-100 text-yellow-700' :
+                      isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
                     }`}
                   >
                     <option value="active">Aktif</option>
@@ -910,47 +920,53 @@ export default function AdminPanel() {
                 </div>
                 
                 {workspace.company && (
-                  <p className="text-sm text-gray-600 flex items-center gap-1 mb-1">
+                  <p className={`text-sm flex items-center gap-1 mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                     <span className="icon icon-sm">business</span> {workspace.company}
                   </p>
                 )}
                 {workspace.location && (
-                  <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
+                  <p className={`text-sm flex items-center gap-1 mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     <span className="icon icon-sm">location_on</span> {workspace.location}
                   </p>
                 )}
                 
                 {/* Workspace Users */}
-                <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-gray-500 mb-2">Kullanıcılar ({workspaceUsers.length})</p>
+                <div className={`mt-3 pt-3 border-t ${isDark ? 'border-gray-700' : ''}`}>
+                  <p className={`text-xs mb-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Kullanıcılar ({workspaceUsers.length})</p>
                   <div className="flex flex-wrap gap-1">
                     {workspaceUsers.slice(0, 5).map(u => (
-                      <span key={u.id} className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs">
+                      <span key={u.id} className={`${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-700'} px-2 py-0.5 rounded text-xs`}>
                         {u.username}
                       </span>
                     ))}
                     {workspaceUsers.length > 5 && (
-                      <span className="text-gray-400 text-xs">+{workspaceUsers.length - 5} daha</span>
+                      <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>+{workspaceUsers.length - 5} daha</span>
                     )}
                   </div>
                 </div>
                 
-                <div className="flex gap-2 mt-3 pt-3 border-t">
+                <div className={`flex gap-2 mt-3 pt-3 border-t ${isDark ? 'border-gray-700' : ''}`}>
                   <button
                     onClick={() => setShowGotoWorkspaceModal(workspace)}
-                    className="flex-1 bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
+                      isDark ? 'bg-green-900/30 hover:bg-green-900/50 text-green-300' : 'bg-green-100 hover:bg-green-200 text-green-700'
+                    }`}
                   >
                     <span className="icon icon-sm">open_in_new</span> Git
                   </button>
                   <button
                     onClick={() => handleTestWorkspace(workspace.id)}
-                    className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1 ${
+                      isDark ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                    }`}
                   >
                     <span className="icon icon-sm">speed</span> Test
                   </button>
                   <button
                     onClick={() => handleDeleteWorkspace(workspace.id)}
-                    className="bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg text-xs font-medium flex items-center gap-1"
+                    className={`py-2 px-3 rounded-lg text-xs font-medium flex items-center gap-1 ${
+                      isDark ? 'bg-red-900/30 hover:bg-red-900/50 text-red-300' : 'bg-red-100 hover:bg-red-200 text-red-700'
+                    }`}
                   >
                     <span className="icon icon-sm">delete</span>
                   </button>
@@ -959,14 +975,14 @@ export default function AdminPanel() {
             )})}
 
             {workspaces.length === 0 && (
-              <div className="col-span-full p-12 text-center text-gray-400">
+              <div className={`col-span-full p-12 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                 <span className="icon icon-xl block mb-2">domain_disabled</span>
-                <p>Henüz workspace oluşturulmadı</p>
+                <p>Henüz çalışma alanı oluşturulmadı</p>
                 <button
                   onClick={() => setShowAddWorkspace(true)}
                   className="mt-4 bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-2 rounded-lg font-medium"
                 >
-                  İlk Workspace'i Oluştur
+                  İlk Çalışma Alanını Oluştur
                 </button>
               </div>
             )}

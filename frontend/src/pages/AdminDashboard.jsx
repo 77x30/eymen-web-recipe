@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 import { useLocale } from '../context/LocaleContext';
 import { useTheme } from '../context/ThemeContext';
 
-const COLORS = ['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
-
 export default function AdminDashboard() {
-  const { user } = useAuth();
   const { addToast, removeToast } = useToast();
   const { t, locale } = useLocale();
   const { isDark } = useTheme();
@@ -39,12 +34,6 @@ export default function AdminDashboard() {
   const [selectedScreenshot, setSelectedScreenshot] = useState(null);
   const [screenshotBlobUrl, setScreenshotBlobUrl] = useState(null);
   const [loadingScreenshot, setLoadingScreenshot] = useState(false);
-
-  // Chart colors for dark/light mode
-  const chartBg = isDark ? '#1f2937' : '#ffffff';
-  const chartText = isDark ? '#9ca3af' : '#6b7280';
-  const chartGrid = isDark ? '#374151' : '#e5e7eb';
-  const tooltipBg = isDark ? '#111827' : '#1f2937';
 
   useEffect(() => {
     fetchData();
@@ -130,19 +119,25 @@ export default function AdminDashboard() {
     setUpdateNote(commit.message);
   };
 
-  // Chart data - users per workspace
-  const usersByWorkspace = workspaces.map(ws => ({
-    name: ws.name.length > 10 ? ws.name.substring(0, 10) + '...' : ws.name,
-    users: users.filter(u => u.workspace_id === ws.id).length
-  }));
+  const usersByRole = {
+    admin: users.filter(u => u.role === 'admin').length,
+    subAdmin: users.filter(u => u.role === 'sub_admin').length,
+    operator: users.filter(u => u.role === 'operator').length,
+    viewer: users.filter(u => u.role === 'viewer').length
+  };
 
-  // Role distribution
-  const roleDistribution = [
-    { name: 'Admin', value: users.filter(u => u.role === 'admin').length },
-    { name: 'Alt Admin', value: users.filter(u => u.role === 'sub_admin').length },
-    { name: 'Operatör', value: users.filter(u => u.role === 'operator').length },
-    { name: 'İzleyici', value: users.filter(u => u.role === 'viewer').length }
-  ].filter(r => r.value > 0);
+  const usersByWorkspace = workspaces
+    .map(ws => ({
+      ...ws,
+      userCount: users.filter(u => u.workspace_id === ws.id).length
+    }))
+    .sort((a, b) => b.userCount - a.userCount);
+
+  const mostCrowdedWorkspace = usersByWorkspace[0] || null;
+  const pendingVerificationUsers = users
+    .filter(u => !u.biometric_verified && u.role !== 'admin')
+    .slice(0, 6);
+  const globalUsersCount = users.filter(u => !u.workspace_id).length;
 
   const formatUptime = (seconds) => {
     const d = Math.floor(seconds / 86400);
@@ -346,60 +341,75 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      {/* Charts Row */}
+      {/* Operations Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Users Per Workspace Chart */}
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4`}>{t('admin.usersPerWorkspace')}</h3>
-          {usersByWorkspace.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={usersByWorkspace}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
-                <XAxis dataKey="name" stroke={chartText} />
-                <YAxis stroke={chartText} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: tooltipBg, border: 'none', borderRadius: '8px', color: 'white' }}
-                />
-                <Legend wrapperStyle={{ color: chartText }} />
-                <Bar dataKey="users" name={t('admin.users')} fill="#EF4444" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className={`h-[300px] flex items-center justify-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              {t('admin.noWorkspaces')}
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4`}>
+            {locale === 'tr' ? 'Rol ve Kapasite Özeti' : 'Role and Capacity Summary'}
+          </h3>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Admin</p>
+              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{usersByRole.admin}</p>
             </div>
-          )}
+            <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{locale === 'tr' ? 'Alt Admin' : 'Sub Admin'}</p>
+              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{usersByRole.subAdmin}</p>
+            </div>
+            <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{locale === 'tr' ? 'Operatör' : 'Operator'}</p>
+              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{usersByRole.operator}</p>
+            </div>
+            <div className={`p-3 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{locale === 'tr' ? 'İzleyici' : 'Viewer'}</p>
+              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>{usersByRole.viewer}</p>
+            </div>
+          </div>
+          <div className={`p-4 rounded-lg border ${isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mb-1`}>
+              {locale === 'tr' ? 'En yoğun çalışma alanı' : 'Most populated workspace'}
+            </p>
+            {mostCrowdedWorkspace ? (
+              <p className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                {mostCrowdedWorkspace.name} ({mostCrowdedWorkspace.userCount} {t('admin.users')})
+              </p>
+            ) : (
+              <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>{t('admin.noWorkspaces')}</p>
+            )}
+            <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+              {locale === 'tr'
+                ? `Global kullanıcı: ${globalUsersCount}`
+                : `Global users: ${globalUsersCount}`}
+            </p>
+          </div>
         </div>
 
-        {/* Role Distribution */}
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4`}>{t('admin.roleDistribution')}</h3>
-          {roleDistribution.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={roleDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={{ stroke: chartText }}
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'} mb-4`}>
+            {locale === 'tr' ? 'Doğrulama Bekleyenler' : 'Pending Verifications'}
+          </h3>
+          {pendingVerificationUsers.length > 0 ? (
+            <div className="space-y-3">
+              {pendingVerificationUsers.map((pendingUser) => (
+                <div
+                  key={pendingUser.id}
+                  className={`p-3 rounded-lg flex items-center justify-between ${isDark ? 'bg-amber-900/20 border border-amber-800/60' : 'bg-amber-50 border border-amber-200'}`}
                 >
-                  {roleDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: tooltipBg, border: 'none', borderRadius: '8px', color: 'white' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  <div className="min-w-0">
+                    <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-gray-800'}`}>{pendingUser.username}</p>
+                    <p className={`text-xs truncate ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+                      {pendingUser.workspace?.name || (locale === 'tr' ? 'Global kullanıcı' : 'Global user')}
+                    </p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-amber-900/40 text-amber-300' : 'bg-amber-100 text-amber-700'}`}>
+                    {locale === 'tr' ? 'Bekliyor' : 'Waiting'}
+                  </span>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className={`h-[300px] flex items-center justify-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              {t('admin.noUsers')}
+            <div className={`h-40 flex items-center justify-center rounded-lg ${isDark ? 'bg-green-900/20 text-green-300' : 'bg-green-50 text-green-700'}`}>
+              {locale === 'tr' ? 'Bekleyen doğrulama yok' : 'No pending verifications'}
             </div>
           )}
         </div>

@@ -5,16 +5,16 @@ import { useWorkspace } from './context/WorkspaceContext';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import BiometricVerification from './pages/BiometricVerification';
+import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import RecipeManager from './pages/RecipeManager';
+import AdminPanel from './pages/AdminPanel';
+import Layout from './components/Layout';
+import AdminLayout from './components/AdminLayout';
+import WhatsNewModal from './components/WhatsNewModal';
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AnalysisDashboard = lazy(() => import('./pages/AnalysisDashboard'));
 const MonitoringDashboard = lazy(() => import('./pages/MonitoringDashboard'));
-const RecipeManager = lazy(() => import('./pages/RecipeManager'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const Layout = lazy(() => import('./components/Layout'));
-const AdminLayout = lazy(() => import('./components/AdminLayout'));
-const WhatsNewModal = lazy(() => import('./components/WhatsNewModal'));
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
@@ -42,11 +42,11 @@ const PrivateRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
-const RouteLoader = () => (
-  <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+const LazyPageLoader = () => (
+  <div className="flex items-center justify-center h-64">
     <div className="text-center">
-      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-gray-400">Yükleniyor...</p>
+      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p className="text-gray-400 text-sm">Yükleniyor...</p>
     </div>
   </div>
 );
@@ -94,50 +94,54 @@ function App() {
   // Subdomain - workspace with recipes
   if (isSubdomain) {
     return (
-      <Suspense fallback={<RouteLoader />}>
-        <>
-          <WhatsNewModal />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <PrivateRoute>
-                <Layout />
-              </PrivateRoute>
-            }>
-              <Route index element={<Dashboard />} />
-              <Route path="recipes" element={<RecipeManager />} />
-              <Route path="recipes/:id" element={<RecipeManager />} />
-              <Route path="admin" element={<AdminPanel />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </>
-      </Suspense>
-    );
-  }
-
-  // Main domain (barida.xyz) or fallback - Admin dashboard only
-  return (
-    <Suspense fallback={<RouteLoader />}>
       <>
         <WhatsNewModal />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={
-            <PrivateRoute adminOnly>
-              <AdminLayout />
+            <PrivateRoute>
+              <Layout />
             </PrivateRoute>
           }>
-            <Route index element={<AdminDashboard />} />
-            <Route path="analysis" element={<AnalysisDashboard />} />
-            <Route path="monitoring" element={<MonitoringDashboard />} />
-            <Route path="workspaces" element={<AdminPanel />} />
-            <Route path="users" element={<AdminPanel />} />
+            <Route index element={<Dashboard />} />
+            <Route path="recipes" element={<RecipeManager />} />
+            <Route path="recipes/:id" element={<RecipeManager />} />
+            <Route path="analysis" element={
+              <Suspense fallback={<LazyPageLoader />}>
+                <AnalysisDashboard />
+              </Suspense>
+            } />
+            <Route path="monitoring" element={
+              <Suspense fallback={<LazyPageLoader />}>
+                <MonitoringDashboard />
+              </Suspense>
+            } />
+            <Route path="admin" element={<AdminPanel />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </>
-    </Suspense>
+    );
+  }
+
+  // Main domain (barida.xyz) or fallback - Admin dashboard only
+  return (
+    <>
+      <WhatsNewModal />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={
+          <PrivateRoute adminOnly>
+            <AdminLayout />
+          </PrivateRoute>
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="workspaces" element={<AdminPanel />} />
+          <Route path="users" element={<AdminPanel />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
 

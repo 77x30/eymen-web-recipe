@@ -69,6 +69,26 @@ export default function Layout() {
               >
                 <span className="icon icon-sm">receipt_long</span> {t('nav.recipes')}
               </Link>
+              <Link 
+                to="/analysis" 
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  isActive('/analysis')
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span className="icon icon-sm">analytics</span> {t('nav.analysis')}
+              </Link>
+              <Link 
+                to="/monitoring" 
+                className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                  isActive('/monitoring')
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span className="icon icon-sm">monitor_heart</span> {t('nav.monitoring')}
+              </Link>
               {(user?.role === 'admin' || user?.role === 'sub_admin') && (
                 <Link 
                   to="/admin" 
